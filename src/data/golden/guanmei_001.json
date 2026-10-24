@@ -1,0 +1,35 @@
+{
+  "id": "guanmei_001",
+  "title": "观梅占",
+  "source": { "file": "《梅花易数》.txt", "lines": "339-345" },
+  "method": "time",
+  "input": { "year_dizhi": "辰", "lunar_month": 12, "lunar_day": 17, "hour_dizhi": "申" },
+  "layer": "A",
+
+  "_design_note": "expected.shengke = 引擎机械的体-相对关系列表（用/互上/互下/变 各对体一次），用于确定性精确判分；原书侧重的叙事性生克链（互巽木复生用离火、巽木逢乾兑金克而伤股）见 reasoning_chain，属解读层范本，不进 expected 精确匹配。源文件名为实际仓库文件《梅花易数》.txt（CLAUDE.md §1 记作 _梅花易数_.txt）。",
+
+  "expected": {
+    "shang_gua": "兑",
+    "xia_gua": "离",
+    "ben_gua": "泽火革",
+    "dong_yao": 1,
+    "bian_gua": "泽山咸",
+    "hu_shang": "乾",
+    "hu_xia": "巽",
+    "ti": "兑",
+    "yong": "离",
+    "ti_wuxing": "金",
+    "yong_wuxing": "火",
+    "shengke": [
+      { "role": "用",   "from": "离", "wuxing": "火", "rel": "克体", "tone": "凶" },
+      { "role": "互上", "from": "乾", "wuxing": "金", "rel": "比和", "tone": "吉" },
+      { "role": "互下", "from": "巽", "wuxing": "木", "rel": "体克", "tone": "吉（费力）" },
+      { "role": "变",   "from": "艮", "wuxing": "土", "rel": "生体", "tone": "大吉" }
+    ],
+    "net": { "ke_ti_count": 1, "sheng_ti_count": 1, "has_rescue": true, "overall": "凶险但有救" },
+    "cited_yaoci": [],
+    "reasoning_chain": "兑金为体→离火克之(用克体)→互巽木复生离火，克体之卦气盛→兑为少女知伤少女→巽为股，逢乾兑金克，故断伤股→幸变为艮土，兑金得生(变生体)，故伤而不危。"
+  },
+
+  "interpretation_reference": "详此卦，明晚当有女子折花，园丁不知而逐之，女子失惊坠地，遂伤其股。兑金为体，离火克之。互中巽木，复三起离火，则克体之卦气盛。兑为少女，因知少女之受伤……幸变为艮土，兑金得生，知少女虽被伤，而不至凶危也。（原书断语，B 层风格锚，不判分）"
+}

@@ -1,0 +1,133 @@
+:root {
+  --paper: #faf8f4;
+  --ink: #23201c;
+  --ink2: #6b645c;
+  --line: #ddd6ca;
+  --card: #fffdf9;
+  --ji: #2f6b45;
+  --xiong: #a33c2a;
+  --accent: #3b4a6b;
+  --radius: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #16151300;
+    --paper: #161513;
+    --ink: #e8e3da;
+    --ink2: #9c958a;
+    --line: #35312b;
+    --card: #1d1b18;
+    --ji: #6fae86;
+    --xiong: #d9775f;
+    --accent: #93a6c9;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #161513;
+  --ink: #e8e3da;
+  --ink2: #9c958a;
+  --line: #35312b;
+  --card: #1d1b18;
+  --ji: #6fae86;
+  --xiong: #d9775f;
+  --accent: #93a6c9;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.75 "Noto Serif CJK SC", "Songti SC", "Source Han Serif SC", Georgia, serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+#app { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+
+header.site { text-align: center; margin: 8px 0 28px; }
+header.site h1 { margin: 0; font-size: 26px; letter-spacing: 4px; font-weight: 600; }
+header.site .sub { color: var(--ink2); font-size: 13px; letter-spacing: 2px; margin-top: 6px; }
+header.site .badge {
+  display: inline-block; margin-top: 10px; padding: 3px 10px; font-size: 12px;
+  border: 1px solid var(--xiong); color: var(--xiong); border-radius: 999px; letter-spacing: 1px;
+}
+
+.step { color: var(--ink2); font-size: 12.5px; letter-spacing: 2px; margin-bottom: 10px; }
+
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px; margin-bottom: 14px;
+}
+
+button {
+  font: inherit; font-size: 15px; color: var(--ink); background: var(--card);
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 12px 14px; width: 100%; text-align: left; cursor: pointer; margin-bottom: 8px;
+}
+button:hover { border-color: var(--accent); }
+button.inline { width: auto; display: inline-block; margin: 0 8px 8px 0; text-align: center; }
+button.ghost { background: transparent; }
+button.primary { border-color: var(--accent); color: var(--accent); text-align: center; }
+button .hint { display: block; color: var(--ink2); font-size: 12.5px; margin-top: 2px; }
+
+textarea, input, select {
+  font: inherit; font-size: 15px; width: 100%; padding: 10px;
+  background: var(--card); color: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--radius);
+}
+textarea { min-height: 76px; resize: vertical; }
+label { display: block; font-size: 13px; color: var(--ink2); margin: 10px 0 4px; }
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row > * { flex: 1 1 140px; }
+
+.guaname { text-align: center; color: var(--ink2); font-size: 15px; letter-spacing: 1px; }
+.verdict { text-align: center; font-size: 40px; letter-spacing: 6px; margin: 10px 0 6px; }
+.verdict.ji { color: var(--ji); }
+.verdict.xiong { color: var(--xiong); }
+.meta { text-align: center; color: var(--ink2); font-size: 13px; }
+.watermark { text-align: center; font-size: 12px; color: var(--xiong); margin-top: 6px; }
+.flagline {
+  text-align: center; font-size: 12.5px; color: var(--xiong);
+  border: 1px dashed var(--xiong); border-radius: var(--radius); padding: 6px; margin-top: 8px;
+}
+
+/* 六爻卦画 */
+.hexes { display: flex; justify-content: center; gap: 26px; margin: 14px 0 4px; }
+.hex { text-align: center; }
+.hex .nm { font-size: 13px; color: var(--ink2); margin-bottom: 6px; }
+.yao { display: flex; justify-content: center; gap: 6px; margin: 4px 0; }
+.yao i { display: block; height: 7px; background: var(--ink); border-radius: 2px; }
+.yao.yang i { width: 62px; }
+.yao.yin i { width: 28px; }
+.yao.dong i { background: var(--xiong); }
+.hex .dongmark { font-size: 11px; color: var(--xiong); margin-top: 4px; min-height: 14px; }
+
+details { border-top: 1px solid var(--line); padding: 10px 0; }
+details > summary { cursor: pointer; font-size: 14px; color: var(--accent); list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+details > summary::before { content: "▸ "; }
+details[open] > summary::before { content: "▾ "; }
+.kv { font-size: 13.5px; color: var(--ink2); margin: 6px 0 0; white-space: pre-wrap; word-break: break-word; }
+
+pre.prompt {
+  font: 12.5px/1.65 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 12px; max-height: 300px; overflow: auto; white-space: pre-wrap; word-break: break-word;
+  color: var(--ink);
+}
+
+.note { font-size: 12.5px; color: var(--ink2); }
+footer.site {
+  margin-top: 32px; padding-top: 14px; border-top: 1px solid var(--line);
+  font-size: 12px; color: var(--ink2); text-align: center; line-height: 1.9;
+}
+footer.site a { color: var(--accent); }
+.toast {
+  position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+  background: var(--ink); color: var(--paper); padding: 8px 16px; border-radius: 999px;
+  font-size: 13px; opacity: 0; transition: opacity .18s; pointer-events: none;
+}
+.toast.show { opacity: .94; }

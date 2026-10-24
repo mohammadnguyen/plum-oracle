@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "title": "净评修正规则表(候选公式A·纯净差值)",
+    "status": "signed",
+    "anchor": "sources/netassess_kaoju_report.md",
+    "formula": "d = 生体数 − 克体数",
+    "counting_rules": {
+      "objects": "计数卦＝用卦、互卦上、互卦下、变卦（4 格）。体卦自身不计。",
+      "per_grid": "相生→计入生体；相克→计入克体；体克该格/体生该格（泄）→不计入生克；比和→不计入生克。",
+      "hu_two_grids": "互卦上下各计一格",
+      "source_quote": "他卦者，谓用、互、变也。",
+      "hu_internal_evidence": "互卦又见重乾",
+      "source_level": "原文直证(计数范围)+原书内证(重乾计两次)"
+    },
+    "bands": [
+      {
+        "cond": "d >= +2",
+        "band": "大吉",
+        "source_level": "原文直证",
+        "source_quote": "生体多者则愈吉"
+      },
+      {
+        "cond": "d == +1",
+        "band": "吉",
+        "source_level": "案例直证",
+        "source_quote": "少年案 d=+1 书断吉"
+      },
+      {
+        "cond": "d == 0 且 生>=1 且 克>=1",
+        "band": "凶中有救",
+        "source_level": "原文直证+案例直证",
+        "source_quote": "欲知凶中有救，生体之卦存焉",
+        "case_evidence": "观梅"
+      },
+      {
+        "cond": "d == 0 且 全比和(生0克0)",
+        "band": "维持门表基础极性(通常吉·百事顺遂)",
+        "source_level": "原文直证",
+        "source_quote": "体用比和，则百事顺遂",
+        "xiangyi_review_flag": true,
+        "note": "西林寺型据理例外的钩子——公式不裁,标记交人工/象义层"
+      },
+      {
+        "cond": "d == -1",
+        "band": "凶",
+        "source_level": "案例直证",
+        "source_quote": "枯枝／鸡鸣 d=−1 书断凶",
+        "case_evidence": "枯枝/鸡鸣",
+        "degree_note": "凶而有救"
+      },
+      {
+        "cond": "d <= -2",
+        "band": "大凶",
+        "source_level": "原文直证",
+        "source_quote": "克体多者则愈凶"
+      },
+      {
+        "cond": "d == 0 且 生0克0 且 非全比和",
+        "band": "维持门表基础极性(净评无生克信号)",
+        "source_level": "文义外推",
+        "source_quote": null,
+        "note": "原书无此格案例——用户按推荐裁决落地(2026-07-23签);推导链注明「净评无生克信号,以门表为准」;xiangyi_review_flag 只属严格全比和"
+      }
+    ],
+    "stacking_order": "门表(18门)先给领域语义+基础极性；净评 d 决定最终吉凶方向与程度；冲突时以 d 为准（案例直证：少年门表体生用=凶但 d=+1 书断吉）",
+    "exclusions": {
+      "no_tiyong": "天时(no_tiyong) 不套净评(原文明文:凡占天时，不分体用，全观诸卦，详推五行)",
+      "xiangfa_only": "物占(xiangfa_only) 不走门表极性，但以净评为主要参考(原书判牛鸣凶依「互变俱克」即净评逻辑;9案回测牡丹/牛鸣/鸡鸣/枯枝走此路径与书判一致)",
+      "nonpolar_abstain": "非吉凶之问（借斧型）弃权",
+      "return_semantics": "行人：d 重定向归期语义(d>0→归速、d<0→归迟/不归)【文义外推】,不改门表归期 verdict",
+      "spec_correction_note": "订正 2026-07-27:PM 原规格『天时/物占不套净评』属写窄——物占正确行为=净评为主要参考(实现与原书一致),据签收订正"
+    },
+    "candidate_B_rejected": {
+      "reason": "与《卦断遗论》案例直证相抵触——原书在少年、牛鸣两案证明用卦关系可被互变数量压倒",
+      "source_quote": "互变俱生，愈见其吉矣。虽用不生体不吉，不为其害也。"
+    },
+    "candidate_C_advanced_toggle": "not_implemented",
+    "pending_items": [
+      {
+        "item": "净评核心句异文：古本「彼灭其吉／稍解其穷」vs 通行本「颇减其吉／则凶减吉加」——语义同向不阻极性,待纸质善本定本",
+        "note": "极性已锁、字面待纸本核"
+      }
+    ],
+    "signed_note": "经 finalize_rules 三重校验翻闸;签收文件摘要:2026-07-30 sign rules\n\n签收以下六张规则表：\n- 化解依据表(huajie)\n- 文本冲突表(text_conflict)\n- 净评表(n"
+  }
+}

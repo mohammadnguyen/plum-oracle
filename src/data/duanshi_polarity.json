@@ -1,0 +1,1328 @@
+{
+  "meta": {
+    "title": "《梅花易数》卷二 十八占断门类·断事极性规则表",
+    "status": "signed",
+    "source_file": "sources/duanshi_polarity_review.md",
+    "derivation": "全部文本字段程序化解析自 PM 多源交叉核验表(主校维基文库卷二,双源印证✓)，零手抄零改写(§11)。",
+    "version_note": "通行本(三卷本)=18门含屋舍占；家传本《邵康节先生心易梅花数》=17门无屋舍占(婚姻提前为第四)。本表按通行本18门。",
+    "hard_rules": [
+      "门类专属极性覆盖通用极性，禁止用通用极性回填特例门(生产.体生用=吉利于子；饮食.体克用=凶饮食有阻)",
+      "天时占不分体用，不入五关系表，走独立象法分支(placeholder)",
+      "行人占 verdict 为归期语义枚举(即归/归期不日/归迟/未归/不归)，非吉凶"
+    ],
+    "exception_channel": {
+      "status": "not_implemented",
+      "name": "据理而断(卦断遗论)",
+      "risk": "允许覆盖体用极性，高风险通道；须单独一轮经 PM 审后再实现。默认体用极性为硬约束。",
+      "source_quote": "卦断遗论（卷二，道音文化/知乎p/684083271）：\"凡占卜决断，固以体用为主，然有不拘体用者。如起例中西林寺额得山地剥，体用互变，俱比和，则为吉，而乃不吉，何也？盖寺者，纯阳人居之地，而纯阴爻象，则群阴剥阳之义显然也。此理甚明，不必拘体用也……盖用《易》断卦，当用理胜处验之，不可拘执于一也。\"",
+      "boundary": "**适用边界**：当卦象与所占对象性质（寺庙纯阳、女子、牛等）冲突、或爻辞与体用矛盾时，据理而断可推翻体用极性；默认仍以体用极性为准。"
+    },
+    "pending_items_global": [
+      {
+        "item": "卦断遗论结句\"不可拘执于一也\"（知乎/百度）vs\"不可拘于执一也\"（道音本）；西林寺例\"而乃不吉\"vs\"而仍不吉\"。",
+        "note": "极性已锁、字面待纸本核"
+      }
+    ],
+    "signed_note": "经 finalize_rules 三重校验翻闸;签收文件摘要:2026-07-30 sign rules\n\n签收以下六张规则表：\n- 化解依据表(huajie)\n- 文本冲突表(text_conflict)\n- 净评表(n"
+  },
+  "doors": [
+    {
+      "men_id": 0,
+      "men_name": "物占/杂占",
+      "men_label": "物占/杂占(扩展)",
+      "polarity_type": "xiangfa_only",
+      "app_extension": true,
+      "not_in_original_18": true,
+      "relations": {},
+      "special_rules": [],
+      "source_quote": "十八占结尾原文（维基文库卷二）：\"上为用体之诀，始发十八章占例，以示后学之法则。然庶务之多，岂止十八占而已乎！然此十八占，乃大事之切要者，占者以类而推之可也。\"",
+      "source_refs": [
+        "维基文库卷二(十八占结尾)"
+      ],
+      "yiwen_note": "扩展门,非原书门类;归物占类案例(牡丹/枯枝/牛鸣/鸡鸣/借斧等)",
+      "pending_items": [],
+      "xiangfa_branch": {
+        "status": "placeholder_not_implemented",
+        "note": "物占不走体用极性(原书无此门规则)——断事依象法+爻辞,分支待后续轮实现"
+      }
+    },
+    {
+      "men_id": 1,
+      "men_name": "天时",
+      "men_label": "天时占",
+      "polarity_type": "no_tiyong",
+      "relations": {},
+      "special_rules": [
+        "**不分体用**，全观诸卦、详推五行；\"全观诸卦者，谓互变卦\""
+      ],
+      "source_quote": "\"凡占天时，不分体用，全观诸卦，详推五行\"",
+      "source_refs": [
+        "维基文库卷二",
+        "知乎p/589420667（带白话批注）"
+      ],
+      "yiwen_note": "通行转述与原文一致，无极性",
+      "pending_items": [],
+      "xiangfa_branch": {
+        "status": "placeholder_not_implemented",
+        "note": "不分体用，全观诸卦、详推五行——独立象法分支，待后续轮实现"
+      }
+    },
+    {
+      "men_id": 2,
+      "men_name": "人事",
+      "men_label": "人事占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "进益之喜",
+          "pm_annotation": null,
+          "source_quote": "\"用克体不宜，体克用则吉。用生体有进益之喜，体生用有耗失之患\"",
+          "source_refs": [
+            "维基文库卷二",
+            "搜狐897540499",
+            "百度百科"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "谋为吉利",
+          "pm_annotation": null,
+          "source_quote": "\"用克体不宜，体克用则吉。用生体有进益之喜，体生用有耗失之患\"",
+          "source_refs": [
+            "维基文库卷二",
+            "搜狐897540499",
+            "百度百科"
+          ]
+        },
+        "体克用": {
+          "verdict": "吉",
+          "duanyu_template": null,
+          "pm_annotation": null,
+          "source_quote": "\"用克体不宜，体克用则吉。用生体有进益之喜，体生用有耗失之患\"",
+          "source_refs": [
+            "维基文库卷二",
+            "搜狐897540499",
+            "百度百科"
+          ]
+        },
+        "体生用": {
+          "verdict": "凶",
+          "duanyu_template": "耗失之患",
+          "pm_annotation": null,
+          "source_quote": "\"用克体不宜，体克用则吉。用生体有进益之喜，体生用有耗失之患\"",
+          "source_refs": [
+            "维基文库卷二",
+            "搜狐897540499",
+            "百度百科"
+          ]
+        },
+        "用克体": {
+          "verdict": "凶",
+          "duanyu_template": "不宜",
+          "pm_annotation": null,
+          "source_quote": "\"用克体不宜，体克用则吉。用生体有进益之喜，体生用有耗失之患\"",
+          "source_refs": [
+            "维基文库卷二",
+            "搜狐897540499",
+            "百度百科"
+          ]
+        }
+      },
+      "special_rules": [
+        "有生体之卦即按前章八卦生克断"
+      ],
+      "source_quote": "\"用克体不宜，体克用则吉。用生体有进益之喜，体生用有耗失之患\"",
+      "source_refs": [
+        "维基文库卷二",
+        "搜狐897540499",
+        "百度百科"
+      ],
+      "yiwen_note": "双源✓",
+      "pending_items": []
+    },
+    {
+      "men_id": 3,
+      "men_name": "家宅",
+      "men_label": "家宅占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "多进益",
+          "pm_annotation": null,
+          "source_quote": "\"体克用则家宅多吉，用克体则家宅多凶。体生用多耗散……用生体多进益\"",
+          "source_refs": [
+            "知乎p/695975959",
+            "搜狐897540499"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "安稳",
+          "pm_annotation": null,
+          "source_quote": "\"体克用则家宅多吉，用克体则家宅多凶。体生用多耗散……用生体多进益\"",
+          "source_refs": [
+            "知乎p/695975959",
+            "搜狐897540499"
+          ]
+        },
+        "体克用": {
+          "verdict": "吉",
+          "duanyu_template": "多吉",
+          "pm_annotation": null,
+          "source_quote": "\"体克用则家宅多吉，用克体则家宅多凶。体生用多耗散……用生体多进益\"",
+          "source_refs": [
+            "知乎p/695975959",
+            "搜狐897540499"
+          ]
+        },
+        "体生用": {
+          "verdict": "凶",
+          "duanyu_template": "耗散/失盗",
+          "pm_annotation": null,
+          "source_quote": "\"体克用则家宅多吉，用克体则家宅多凶。体生用多耗散……用生体多进益\"",
+          "source_refs": [
+            "知乎p/695975959",
+            "搜狐897540499"
+          ]
+        },
+        "用克体": {
+          "verdict": "凶",
+          "duanyu_template": "多凶",
+          "pm_annotation": null,
+          "source_quote": "\"体克用则家宅多吉，用克体则家宅多凶。体生用多耗散……用生体多进益\"",
+          "source_refs": [
+            "知乎p/695975959",
+            "搜狐897540499"
+          ]
+        }
+      },
+      "special_rules": [
+        "\"如有生体之卦，即以前章人事占断之\""
+      ],
+      "source_quote": "\"体克用则家宅多吉，用克体则家宅多凶。体生用多耗散……用生体多进益\"",
+      "source_refs": [
+        "知乎p/695975959",
+        "搜狐897540499"
+      ],
+      "yiwen_note": "\"用生体多进益\"句维基文库/搜狐从略，知乎本有；极性不变",
+      "pending_items": [
+        {
+          "item": "家宅占：\"用生体，多进益，或有馈送之喜\"一句知乎p/695975959有，维基文库/搜狐本从略；不影响极性。",
+          "note": "极性已锁、字面待纸本核"
+        }
+      ]
+    },
+    {
+      "men_id": 4,
+      "men_name": "屋舍",
+      "men_label": "屋舍占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "门户兴隆",
+          "pm_annotation": null,
+          "source_quote": "\"体克用居之吉，用克体居之凶。体生用主资财衰退；用生体则门户兴隆\"",
+          "source_refs": [
+            "搜狐897540499",
+            "知乎p/695975959"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "安稳",
+          "pm_annotation": null,
+          "source_quote": "\"体克用居之吉，用克体居之凶。体生用主资财衰退；用生体则门户兴隆\"",
+          "source_refs": [
+            "搜狐897540499",
+            "知乎p/695975959"
+          ]
+        },
+        "体克用": {
+          "verdict": "吉",
+          "duanyu_template": "居之吉",
+          "pm_annotation": null,
+          "source_quote": "\"体克用居之吉，用克体居之凶。体生用主资财衰退；用生体则门户兴隆\"",
+          "source_refs": [
+            "搜狐897540499",
+            "知乎p/695975959"
+          ]
+        },
+        "体生用": {
+          "verdict": "凶",
+          "duanyu_template": "资财衰退",
+          "pm_annotation": null,
+          "source_quote": "\"体克用居之吉，用克体居之凶。体生用主资财衰退；用生体则门户兴隆\"",
+          "source_refs": [
+            "搜狐897540499",
+            "知乎p/695975959"
+          ]
+        },
+        "用克体": {
+          "verdict": "凶",
+          "duanyu_template": "居之凶",
+          "pm_annotation": null,
+          "source_quote": "\"体克用居之吉，用克体居之凶。体生用主资财衰退；用生体则门户兴隆\"",
+          "source_refs": [
+            "搜狐897540499",
+            "知乎p/695975959"
+          ]
+        }
+      },
+      "special_rules": [
+        "家传本无此门"
+      ],
+      "source_quote": "\"体克用居之吉，用克体居之凶。体生用主资财衰退；用生体则门户兴隆\"",
+      "source_refs": [
+        "搜狐897540499",
+        "知乎p/695975959"
+      ],
+      "yiwen_note": "\"衰退\"一作\"冷退\"；家传本缺此门",
+      "pending_items": []
+    },
+    {
+      "men_id": 5,
+      "men_name": "婚姻",
+      "men_label": "婚姻占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "易成/有得",
+          "pm_annotation": null,
+          "source_quote": "\"用生体，婚易成……体生用，婚难成……体克用，可成但成之迟；用克体，不可成，成亦有害\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "百度百科",
+            "维基文库卷二"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "婚姻吉利",
+          "pm_annotation": null,
+          "source_quote": "\"用生体，婚易成……体生用，婚难成……体克用，可成但成之迟；用克体，不可成，成亦有害\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "百度百科",
+            "维基文库卷二"
+          ]
+        },
+        "体克用": {
+          "verdict": "吉",
+          "duanyu_template": "可成但迟",
+          "pm_annotation": null,
+          "source_quote": "\"用生体，婚易成……体生用，婚难成……体克用，可成但成之迟；用克体，不可成，成亦有害\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "百度百科",
+            "维基文库卷二"
+          ]
+        },
+        "体生用": {
+          "verdict": "凶",
+          "duanyu_template": "难成/有失",
+          "pm_annotation": null,
+          "source_quote": "\"用生体，婚易成……体生用，婚难成……体克用，可成但成之迟；用克体，不可成，成亦有害\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "百度百科",
+            "维基文库卷二"
+          ]
+        },
+        "用克体": {
+          "verdict": "凶",
+          "duanyu_template": "不可成，有害",
+          "pm_annotation": null,
+          "source_quote": "\"用生体，婚易成……体生用，婚难成……体克用，可成但成之迟；用克体，不可成，成亦有害\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "百度百科",
+            "维基文库卷二"
+          ]
+        }
+      },
+      "special_rules": [
+        "体=所占之家、用=所婚之家；男女卦象（乾端正而长、坎邪淫黑色、艮色黄多巧、震美貌难犯、巽发少稀疏、离短赤色、坤貌丑大腹、兑高长白色）"
+      ],
+      "source_quote": "\"用生体，婚易成……体生用，婚难成……体克用，可成但成之迟；用克体，不可成，成亦有害\"",
+      "source_refs": [
+        "知乎p/589420667",
+        "百度百科",
+        "维基文库卷二"
+      ],
+      "yiwen_note": "双源✓",
+      "pending_items": []
+    },
+    {
+      "men_id": 6,
+      "men_name": "生产",
+      "men_label": "生产占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "利于母",
+          "pm_annotation": null,
+          "source_quote": "\"体克用不利于子；用克体不利于母……用生体，利于母；体生用，利于子\"",
+          "source_refs": [
+            "百度百科",
+            "乾坤国学院157",
+            "知乎p/589420667"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "生育顺快",
+          "pm_annotation": null,
+          "source_quote": "\"体克用不利于子；用克体不利于母……用生体，利于母；体生用，利于子\"",
+          "source_refs": [
+            "百度百科",
+            "乾坤国学院157",
+            "知乎p/589420667"
+          ]
+        },
+        "体克用": {
+          "verdict": "mixed_mother_child",
+          "duanyu_template": "不利于子",
+          "pm_annotation": null,
+          "source_quote": "\"体克用不利于子；用克体不利于母……用生体，利于母；体生用，利于子\"",
+          "source_refs": [
+            "百度百科",
+            "乾坤国学院157",
+            "知乎p/589420667"
+          ]
+        },
+        "体生用": {
+          "verdict": "吉",
+          "duanyu_template": "利于子",
+          "pm_annotation": "（★反求财）",
+          "source_quote": "\"体克用不利于子；用克体不利于母……用生体，利于母；体生用，利于子\"",
+          "source_refs": [
+            "百度百科",
+            "乾坤国学院157",
+            "知乎p/589420667"
+          ]
+        },
+        "用克体": {
+          "verdict": "mixed_mother_child",
+          "duanyu_template": "不利于母",
+          "pm_annotation": null,
+          "source_quote": "\"体克用不利于子；用克体不利于母……用生体，利于母；体生用，利于子\"",
+          "source_refs": [
+            "百度百科",
+            "乾坤国学院157",
+            "知乎p/589420667"
+          ]
+        }
+      },
+      "special_rules": [
+        "体=母、用=生（子）；\"阳卦阳爻多者则生男，阴卦阴爻多者生女\"；\"体克用而用卦衰则子难完，用克体而体卦衰则母难保\""
+      ],
+      "source_quote": "\"体克用不利于子；用克体不利于母……用生体，利于母；体生用，利于子\"",
+      "source_refs": [
+        "百度百科",
+        "乾坤国学院157",
+        "知乎p/589420667"
+      ],
+      "yiwen_note": "**三系异文**：不利于子/不利于男；子难完/子难产；利于子/易于生（道音daoisms.com.cn/78505作\"易于母/易于生\"）——极性一致，字面待纸本核",
+      "pending_items": [
+        {
+          "item": "生产占三系交叉异文：①\"不利于子\"（甲/通行，百度百科）vs\"不利于男\"（乙，360doc 75197597）；②\"子难完\"（甲）vs\"子难产\"（道音本78505）；③\"用生体，利于母；体生用，利于子\"（甲/通行，百度百科/乾坤国学院）vs\"用生体，易于母；体生用，易于生\"（乙，道音文化78505逐字）。**极性一致**（用生体利母＝吉、体生用利子/生＝吉），仅字面异。",
+          "note": "极性已锁、字面待纸本核"
+        }
+      ]
+    },
+    {
+      "men_id": 7,
+      "men_name": "饮食",
+      "men_label": "饮食占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "必丰",
+          "pm_annotation": null,
+          "source_quote": "\"用生体饮食必丰；体生用饮食难就；体克用则饮食有阻；用克体饮食必无……卦中有坎则有酒，有兑则有食\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科",
+            "知乎p/589420667"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "丰足",
+          "pm_annotation": null,
+          "source_quote": "\"用生体饮食必丰；体生用饮食难就；体克用则饮食有阻；用克体饮食必无……卦中有坎则有酒，有兑则有食\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科",
+            "知乎p/589420667"
+          ]
+        },
+        "体克用": {
+          "verdict": "凶",
+          "duanyu_template": "饮食有阻",
+          "pm_annotation": "（反通用）",
+          "source_quote": "\"用生体饮食必丰；体生用饮食难就；体克用则饮食有阻；用克体饮食必无……卦中有坎则有酒，有兑则有食\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科",
+            "知乎p/589420667"
+          ]
+        },
+        "体生用": {
+          "verdict": "凶",
+          "duanyu_template": "难就",
+          "pm_annotation": null,
+          "source_quote": "\"用生体饮食必丰；体生用饮食难就；体克用则饮食有阻；用克体饮食必无……卦中有坎则有酒，有兑则有食\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科",
+            "知乎p/589420667"
+          ]
+        },
+        "用克体": {
+          "verdict": "凶",
+          "duanyu_template": "必无",
+          "pm_annotation": null,
+          "source_quote": "\"用生体饮食必丰；体生用饮食难就；体克用则饮食有阻；用克体饮食必无……卦中有坎则有酒，有兑则有食\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科",
+            "知乎p/589420667"
+          ]
+        }
+      },
+      "special_rules": [
+        "坎=酒、兑=食，无坎无兑则皆无；兑坎生体则酒肉醉饱"
+      ],
+      "source_quote": "\"用生体饮食必丰；体生用饮食难就；体克用则饮食有阻；用克体饮食必无……卦中有坎则有酒，有兑则有食\"",
+      "source_refs": [
+        "维基文库卷二",
+        "百度百科",
+        "知乎p/589420667"
+      ],
+      "yiwen_note": "双源✓。例外边界（卷二十应奥论）：\"遇坤艮则坎亦无酒，离值则兑亦无食\"",
+      "pending_items": []
+    },
+    {
+      "men_id": 8,
+      "men_name": "求谋",
+      "men_label": "求谋占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "不谋而成",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，谋虽可成但成迟；用克体，求谋不成，谋亦有害；用生体不谋而成；体生用多谋少遂\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "百度百科",
+            "易德轩56090"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "称意",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，谋虽可成但成迟；用克体，求谋不成，谋亦有害；用生体不谋而成；体生用多谋少遂\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "百度百科",
+            "易德轩56090"
+          ]
+        },
+        "体克用": {
+          "verdict": "吉",
+          "duanyu_template": "可成但迟",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，谋虽可成但成迟；用克体，求谋不成，谋亦有害；用生体不谋而成；体生用多谋少遂\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "百度百科",
+            "易德轩56090"
+          ]
+        },
+        "体生用": {
+          "verdict": "凶",
+          "duanyu_template": "多谋少遂",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，谋虽可成但成迟；用克体，求谋不成，谋亦有害；用生体不谋而成；体生用多谋少遂\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "百度百科",
+            "易德轩56090"
+          ]
+        },
+        "用克体": {
+          "verdict": "凶",
+          "duanyu_template": "不成，有害",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，谋虽可成但成迟；用克体，求谋不成，谋亦有害；用生体不谋而成；体生用多谋少遂\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "百度百科",
+            "易德轩56090"
+          ]
+        }
+      },
+      "special_rules": [],
+      "source_quote": "\"体克用，谋虽可成但成迟；用克体，求谋不成，谋亦有害；用生体不谋而成；体生用多谋少遂\"",
+      "source_refs": [
+        "知乎p/589420667",
+        "百度百科",
+        "易德轩56090"
+      ],
+      "yiwen_note": "双源✓",
+      "pending_items": []
+    },
+    {
+      "men_id": 9,
+      "men_name": "求名",
+      "men_label": "求名占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "易成/有得",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，名可成但成迟；用克体，名不可成；体生用，名不可就，或因名有丧；用生体，名易成\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "百度百科",
+            "维基文库卷二"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "功名称意",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，名可成但成迟；用克体，名不可成；体生用，名不可就，或因名有丧；用生体，名易成\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "百度百科",
+            "维基文库卷二"
+          ]
+        },
+        "体克用": {
+          "verdict": "吉",
+          "duanyu_template": "可成但迟",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，名可成但成迟；用克体，名不可成；体生用，名不可就，或因名有丧；用生体，名易成\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "百度百科",
+            "维基文库卷二"
+          ]
+        },
+        "体生用": {
+          "verdict": "凶",
+          "duanyu_template": "不可就/有丧",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，名可成但成迟；用克体，名不可成；体生用，名不可就，或因名有丧；用生体，名易成\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "百度百科",
+            "维基文库卷二"
+          ]
+        },
+        "用克体": {
+          "verdict": "凶",
+          "duanyu_template": "不可成",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，名可成但成迟；用克体，名不可成；体生用，名不可就，或因名有丧；用生体，名易成\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "百度百科",
+            "维基文库卷二"
+          ]
+        }
+      },
+      "special_rules": [
+        "在任占最忌克体之卦（居官见祸、轻则责罚重则削官）；成名之日看生体卦气"
+      ],
+      "source_quote": "\"体克用，名可成但成迟；用克体，名不可成；体生用，名不可就，或因名有丧；用生体，名易成\"",
+      "source_refs": [
+        "知乎p/589420667",
+        "百度百科",
+        "维基文库卷二"
+      ],
+      "yiwen_note": "双源✓",
+      "pending_items": []
+    },
+    {
+      "men_id": 10,
+      "men_name": "求财",
+      "men_label": "求财占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "进益之喜",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，有财；用克体，无财；体生用，财有损耗之忧；用生体，财有进益之喜；体用比和，财利快意\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "p/663062907",
+            "百度百科",
+            "神巴巴"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "财利快意",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，有财；用克体，无财；体生用，财有损耗之忧；用生体，财有进益之喜；体用比和，财利快意\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "p/663062907",
+            "百度百科",
+            "神巴巴"
+          ]
+        },
+        "体克用": {
+          "verdict": "吉",
+          "duanyu_template": "有财",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，有财；用克体，无财；体生用，财有损耗之忧；用生体，财有进益之喜；体用比和，财利快意\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "p/663062907",
+            "百度百科",
+            "神巴巴"
+          ]
+        },
+        "体生用": {
+          "verdict": "凶",
+          "duanyu_template": "财有损耗之忧",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，有财；用克体，无财；体生用，财有损耗之忧；用生体，财有进益之喜；体用比和，财利快意\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "p/663062907",
+            "百度百科",
+            "神巴巴"
+          ]
+        },
+        "用克体": {
+          "verdict": "凶",
+          "duanyu_template": "无财",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，有财；用克体，无财；体生用，财有损耗之忧；用生体，财有进益之喜；体用比和，财利快意\"",
+          "source_refs": [
+            "知乎p/589420667",
+            "p/663062907",
+            "百度百科",
+            "神巴巴"
+          ]
+        }
+      },
+      "special_rules": [
+        "得财之日=生体卦气；破财之日=克体卦气"
+      ],
+      "source_quote": "\"体克用，有财；用克体，无财；体生用，财有损耗之忧；用生体，财有进益之喜；体用比和，财利快意\"",
+      "source_refs": [
+        "知乎p/589420667",
+        "p/663062907",
+        "百度百科",
+        "神巴巴"
+      ],
+      "yiwen_note": "双源✓（与生产门体生用极性相反，同底本坐实）",
+      "pending_items": []
+    },
+    {
+      "men_id": 11,
+      "men_name": "交易",
+      "men_label": "交易占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "即成有财",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，有财；用克体，不成；体生用，难成，或因交易有失；用生体，即成，成必有财\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科",
+            "知乎p/589420667"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "易成",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，有财；用克体，不成；体生用，难成，或因交易有失；用生体，即成，成必有财\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科",
+            "知乎p/589420667"
+          ]
+        },
+        "体克用": {
+          "verdict": "吉",
+          "duanyu_template": "有财",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，有财；用克体，不成；体生用，难成，或因交易有失；用生体，即成，成必有财\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科",
+            "知乎p/589420667"
+          ]
+        },
+        "体生用": {
+          "verdict": "凶",
+          "duanyu_template": "难成/有失",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，有财；用克体，不成；体生用，难成，或因交易有失；用生体，即成，成必有财\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科",
+            "知乎p/589420667"
+          ]
+        },
+        "用克体": {
+          "verdict": "凶",
+          "duanyu_template": "不成",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，有财；用克体，不成；体生用，难成，或因交易有失；用生体，即成，成必有财\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科",
+            "知乎p/589420667"
+          ]
+        }
+      },
+      "special_rules": [
+        "用为财"
+      ],
+      "source_quote": "\"体克用，有财；用克体，不成；体生用，难成，或因交易有失；用生体，即成，成必有财\"",
+      "source_refs": [
+        "维基文库卷二",
+        "百度百科",
+        "知乎p/589420667"
+      ],
+      "yiwen_note": "双源✓",
+      "pending_items": []
+    },
+    {
+      "men_id": 12,
+      "men_name": "出行",
+      "men_label": "出行占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "意外之财",
+          "pm_annotation": null,
+          "source_quote": "\"体克用可行，所至多得意；用克体出则有祸；体生用出行有破耗之失；用生体有意外之财\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "顺快",
+          "pm_annotation": null,
+          "source_quote": "\"体克用可行，所至多得意；用克体出则有祸；体生用出行有破耗之失；用生体有意外之财\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科"
+          ]
+        },
+        "体克用": {
+          "verdict": "吉",
+          "duanyu_template": "可行得意",
+          "pm_annotation": null,
+          "source_quote": "\"体克用可行，所至多得意；用克体出则有祸；体生用出行有破耗之失；用生体有意外之财\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科"
+          ]
+        },
+        "体生用": {
+          "verdict": "凶",
+          "duanyu_template": "破耗之失",
+          "pm_annotation": null,
+          "source_quote": "\"体克用可行，所至多得意；用克体出则有祸；体生用出行有破耗之失；用生体有意外之财\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科"
+          ]
+        },
+        "用克体": {
+          "verdict": "凶",
+          "duanyu_template": "出则有祸",
+          "pm_annotation": null,
+          "source_quote": "\"体克用可行，所至多得意；用克体出则有祸；体生用出行有破耗之失；用生体有意外之财\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科"
+          ]
+        }
+      },
+      "special_rules": [
+        "乾震多主动、坤艮多不动、巽宜舟行、离宜陆行、坎妨失脱、兑主纷争"
+      ],
+      "source_quote": "\"体克用可行，所至多得意；用克体出则有祸；体生用出行有破耗之失；用生体有意外之财\"",
+      "source_refs": [
+        "维基文库卷二",
+        "百度百科"
+      ],
+      "yiwen_note": "双源✓",
+      "pending_items": []
+    },
+    {
+      "men_id": 13,
+      "men_name": "行人",
+      "men_label": "行人占",
+      "polarity_type": "return_semantics",
+      "relations": {
+        "用生体": {
+          "verdict": "即归",
+          "duanyu_template": null,
+          "pm_annotation": null,
+          "source_quote": "\"体克用行人归迟；用克体行人不归；体生用行人未归；用生体行人即归\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科"
+          ]
+        },
+        "比和": {
+          "verdict": "归期不日",
+          "duanyu_template": null,
+          "pm_annotation": null,
+          "source_quote": "\"体克用行人归迟；用克体行人不归；体生用行人未归；用生体行人即归\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科"
+          ]
+        },
+        "体克用": {
+          "verdict": "归迟",
+          "duanyu_template": null,
+          "pm_annotation": null,
+          "source_quote": "\"体克用行人归迟；用克体行人不归；体生用行人未归；用生体行人即归\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科"
+          ]
+        },
+        "体生用": {
+          "verdict": "未归",
+          "duanyu_template": null,
+          "pm_annotation": null,
+          "source_quote": "\"体克用行人归迟；用克体行人不归；体生用行人未归；用生体行人即归\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科"
+          ]
+        },
+        "用克体": {
+          "verdict": "不归",
+          "duanyu_template": null,
+          "pm_annotation": null,
+          "source_quote": "\"体克用行人归迟；用克体行人不归；体生用行人未归；用生体行人即归\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科"
+          ]
+        }
+      },
+      "special_rules": [
+        "用卦逢生在外顺快、逢衰受克在外灾殃；震多不宁、艮多有阻、坎有险难、兑主纷争"
+      ],
+      "source_quote": "\"体克用行人归迟；用克体行人不归；体生用行人未归；用生体行人即归\"",
+      "source_refs": [
+        "维基文库卷二",
+        "百度百科"
+      ],
+      "yiwen_note": "双源✓。**断归期语义非纯吉凶**",
+      "pending_items": []
+    },
+    {
+      "men_id": 14,
+      "men_name": "谒见",
+      "men_label": "谒见占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "可见有得",
+          "pm_annotation": null,
+          "source_quote": "\"体克用可见；用克体不见；体生用难见，见之而无益；用生体可见，见之且有得\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科",
+            "知乎p/589420667"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "欢然相见",
+          "pm_annotation": null,
+          "source_quote": "\"体克用可见；用克体不见；体生用难见，见之而无益；用生体可见，见之且有得\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科",
+            "知乎p/589420667"
+          ]
+        },
+        "体克用": {
+          "verdict": "吉",
+          "duanyu_template": "可见",
+          "pm_annotation": null,
+          "source_quote": "\"体克用可见；用克体不见；体生用难见，见之而无益；用生体可见，见之且有得\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科",
+            "知乎p/589420667"
+          ]
+        },
+        "体生用": {
+          "verdict": "凶",
+          "duanyu_template": "难见无益",
+          "pm_annotation": null,
+          "source_quote": "\"体克用可见；用克体不见；体生用难见，见之而无益；用生体可见，见之且有得\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科",
+            "知乎p/589420667"
+          ]
+        },
+        "用克体": {
+          "verdict": "凶",
+          "duanyu_template": "不见",
+          "pm_annotation": null,
+          "source_quote": "\"体克用可见；用克体不见；体生用难见，见之而无益；用生体可见，见之且有得\"",
+          "source_refs": [
+            "维基文库卷二",
+            "百度百科",
+            "知乎p/589420667"
+          ]
+        }
+      },
+      "special_rules": [],
+      "source_quote": "\"体克用可见；用克体不见；体生用难见，见之而无益；用生体可见，见之且有得\"",
+      "source_refs": [
+        "维基文库卷二",
+        "百度百科",
+        "知乎p/589420667"
+      ],
+      "yiwen_note": "双源✓",
+      "pending_items": []
+    },
+    {
+      "men_id": 15,
+      "men_name": "失物",
+      "men_label": "失物占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "物易寻",
+          "pm_annotation": null,
+          "source_quote": "\"体克用可寻迟得；用克体不可寻；体生用物难见；用生体物易寻\"",
+          "source_refs": [
+            "搜狐897540499",
+            "知乎p/589420667",
+            "道音文化"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "物不失",
+          "pm_annotation": null,
+          "source_quote": "\"体克用可寻迟得；用克体不可寻；体生用物难见；用生体物易寻\"",
+          "source_refs": [
+            "搜狐897540499",
+            "知乎p/589420667",
+            "道音文化"
+          ]
+        },
+        "体克用": {
+          "verdict": "吉",
+          "duanyu_template": "可寻迟得",
+          "pm_annotation": null,
+          "source_quote": "\"体克用可寻迟得；用克体不可寻；体生用物难见；用生体物易寻\"",
+          "source_refs": [
+            "搜狐897540499",
+            "知乎p/589420667",
+            "道音文化"
+          ]
+        },
+        "体生用": {
+          "verdict": "凶",
+          "duanyu_template": "物难见",
+          "pm_annotation": null,
+          "source_quote": "\"体克用可寻迟得；用克体不可寻；体生用物难见；用生体物易寻\"",
+          "source_refs": [
+            "搜狐897540499",
+            "知乎p/589420667",
+            "道音文化"
+          ]
+        },
+        "用克体": {
+          "verdict": "凶",
+          "duanyu_template": "不可寻",
+          "pm_annotation": null,
+          "source_quote": "\"体克用可寻迟得；用克体不可寻；体生用物难见；用生体物易寻\"",
+          "source_refs": [
+            "搜狐897540499",
+            "知乎p/589420667",
+            "道音文化"
+          ]
+        }
+      },
+      "special_rules": [
+        "方位法以变卦定：乾西北、坤西南、震东、巽东南、坎北水边、离南炉厨、艮东北土穴、兑西泽畔破垣"
+      ],
+      "source_quote": "\"体克用可寻迟得；用克体不可寻；体生用物难见；用生体物易寻\"",
+      "source_refs": [
+        "搜狐897540499",
+        "知乎p/589420667",
+        "道音文化"
+      ],
+      "yiwen_note": "双源✓",
+      "pending_items": []
+    },
+    {
+      "men_id": 16,
+      "men_name": "疾病",
+      "men_label": "疾病占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "即愈",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，病易安；体生用，病难愈……体克用者，勿药有喜；用克体者，虽药无功……用生体者，即愈……若究和平之日，主卦决之……如离卦生体，宜服热药；坎卦生体，宜服冷药，如艮温补；乾兑凉药是也\"",
+          "source_refs": [
+            "搜狐897540499",
+            "百度百科",
+            "道音文化78405",
+            "豆瓣陈明点校本"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "疾病易安",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，病易安；体生用，病难愈……体克用者，勿药有喜；用克体者，虽药无功……用生体者，即愈……若究和平之日，主卦决之……如离卦生体，宜服热药；坎卦生体，宜服冷药，如艮温补；乾兑凉药是也\"",
+          "source_refs": [
+            "搜狐897540499",
+            "百度百科",
+            "道音文化78405",
+            "豆瓣陈明点校本"
+          ]
+        },
+        "体克用": {
+          "verdict": "吉",
+          "duanyu_template": "病易安/勿药有喜",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，病易安；体生用，病难愈……体克用者，勿药有喜；用克体者，虽药无功……用生体者，即愈……若究和平之日，主卦决之……如离卦生体，宜服热药；坎卦生体，宜服冷药，如艮温补；乾兑凉药是也\"",
+          "source_refs": [
+            "搜狐897540499",
+            "百度百科",
+            "道音文化78405",
+            "豆瓣陈明点校本"
+          ]
+        },
+        "体生用": {
+          "verdict": "凶",
+          "duanyu_template": "病难愈/迁延",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，病易安；体生用，病难愈……体克用者，勿药有喜；用克体者，虽药无功……用生体者，即愈……若究和平之日，主卦决之……如离卦生体，宜服热药；坎卦生体，宜服冷药，如艮温补；乾兑凉药是也\"",
+          "source_refs": [
+            "搜狐897540499",
+            "百度百科",
+            "道音文化78405",
+            "豆瓣陈明点校本"
+          ]
+        },
+        "用克体": {
+          "verdict": "凶",
+          "duanyu_template": "虽药无功",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，病易安；体生用，病难愈……体克用者，勿药有喜；用克体者，虽药无功……用生体者，即愈……若究和平之日，主卦决之……如离卦生体，宜服热药；坎卦生体，宜服冷药，如艮温补；乾兑凉药是也\"",
+          "source_refs": [
+            "搜狐897540499",
+            "百度百科",
+            "道音文化78405",
+            "豆瓣陈明点校本"
+          ]
+        }
+      },
+      "special_rules": [
+        "应期：\"和平之日，主卦决之；危厄之期，克体之卦定之\"；医药：\"离生体宜热药、坎生体宜冷药、艮温补、乾兑凉药\"；病位：\"乾首、坤腹、坎血肾、离心目、艮手指、震足、巽股、兑口\""
+      ],
+      "source_quote": "\"体克用，病易安；体生用，病难愈……体克用者，勿药有喜；用克体者，虽药无功……用生体者，即愈……若究和平之日，主卦决之……如离卦生体，宜服热药；坎卦生体，宜服冷药，如艮温补；乾兑凉药是也\"",
+      "source_refs": [
+        "搜狐897540499",
+        "百度百科",
+        "道音文化78405",
+        "豆瓣陈明点校本"
+      ],
+      "yiwen_note": "双源✓。异文：应期\"主卦决之\"（搜狐/百度）vs\"生体之卦决之\"（道音本）；\"凶中有救\"vs\"生中有救\"",
+      "pending_items": [
+        {
+          "item": "疾病占：应期句\"和平之日，主卦决之\"（搜狐/百度）vs\"生体之卦决之\"（道音本78405）；\"凶中有救\"vs\"生中有救\"。极性不受影响。",
+          "note": "极性已锁、字面待纸本核"
+        }
+      ]
+    },
+    {
+      "men_id": 17,
+      "men_name": "官讼",
+      "men_label": "官讼占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "得理/有所得",
+          "pm_annotation": null,
+          "source_quote": "\"体克用者，已胜人；用克体者，人胜己；体生用，非为失理，或因官有所丧；用生体，不止得理，或因讼有所得\"",
+          "source_refs": [
+            "百度百科",
+            "知乎p/677677458",
+            "道音文化"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "官讼最吉",
+          "pm_annotation": null,
+          "source_quote": "\"体克用者，已胜人；用克体者，人胜己；体生用，非为失理，或因官有所丧；用生体，不止得理，或因讼有所得\"",
+          "source_refs": [
+            "百度百科",
+            "知乎p/677677458",
+            "道音文化"
+          ]
+        },
+        "体克用": {
+          "verdict": "吉",
+          "duanyu_template": "己胜人",
+          "pm_annotation": null,
+          "source_quote": "\"体克用者，已胜人；用克体者，人胜己；体生用，非为失理，或因官有所丧；用生体，不止得理，或因讼有所得\"",
+          "source_refs": [
+            "百度百科",
+            "知乎p/677677458",
+            "道音文化"
+          ]
+        },
+        "体生用": {
+          "verdict": "凶",
+          "duanyu_template": "失理/有所丧",
+          "pm_annotation": null,
+          "source_quote": "\"体克用者，已胜人；用克体者，人胜己；体生用，非为失理，或因官有所丧；用生体，不止得理，或因讼有所得\"",
+          "source_refs": [
+            "百度百科",
+            "知乎p/677677458",
+            "道音文化"
+          ]
+        },
+        "用克体": {
+          "verdict": "凶",
+          "duanyu_template": "人胜己",
+          "pm_annotation": null,
+          "source_quote": "\"体克用者，已胜人；用克体者，人胜己；体生用，非为失理，或因官有所丧；用生体，不止得理，或因讼有所得\"",
+          "source_refs": [
+            "百度百科",
+            "知乎p/677677458",
+            "道音文化"
+          ]
+        }
+      },
+      "special_rules": [
+        "体卦宜旺、用卦宜衰；比和\"必有主和之义\""
+      ],
+      "source_quote": "\"体克用者，已胜人；用克体者，人胜己；体生用，非为失理，或因官有所丧；用生体，不止得理，或因讼有所得\"",
+      "source_refs": [
+        "百度百科",
+        "知乎p/677677458",
+        "道音文化"
+      ],
+      "yiwen_note": "双源✓",
+      "pending_items": []
+    },
+    {
+      "men_id": 18,
+      "men_name": "坟墓",
+      "men_label": "坟墓占",
+      "polarity_type": "five_relations",
+      "relations": {
+        "用生体": {
+          "verdict": "吉",
+          "duanyu_template": "兴隆荫后",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，葬之吉；用克体，葬之凶；体生用，葬之主运退；用生体，葬之主兴隆，有荫益后嗣\"",
+          "source_refs": [
+            "百度百科",
+            "知乎p/677677458",
+            "乾坤国学院157"
+          ]
+        },
+        "比和": {
+          "verdict": "吉",
+          "duanyu_template": "吉地",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，葬之吉；用克体，葬之凶；体生用，葬之主运退；用生体，葬之主兴隆，有荫益后嗣\"",
+          "source_refs": [
+            "百度百科",
+            "知乎p/677677458",
+            "乾坤国学院157"
+          ]
+        },
+        "体克用": {
+          "verdict": "吉",
+          "duanyu_template": "葬之吉",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，葬之吉；用克体，葬之凶；体生用，葬之主运退；用生体，葬之主兴隆，有荫益后嗣\"",
+          "source_refs": [
+            "百度百科",
+            "知乎p/677677458",
+            "乾坤国学院157"
+          ]
+        },
+        "体生用": {
+          "verdict": "凶",
+          "duanyu_template": "葬之运退",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，葬之吉；用克体，葬之凶；体生用，葬之主运退；用生体，葬之主兴隆，有荫益后嗣\"",
+          "source_refs": [
+            "百度百科",
+            "知乎p/677677458",
+            "乾坤国学院157"
+          ]
+        },
+        "用克体": {
+          "verdict": "凶",
+          "duanyu_template": "葬之凶",
+          "pm_annotation": null,
+          "source_quote": "\"体克用，葬之吉；用克体，葬之凶；体生用，葬之主运退；用生体，葬之主兴隆，有荫益后嗣\"",
+          "source_refs": [
+            "百度百科",
+            "知乎p/677677458",
+            "乾坤国学院157"
+          ]
+        }
+      },
+      "special_rules": [
+        "\"有荫益后嗣\"\"大宜葬，葬之吉昌\""
+      ],
+      "source_quote": "\"体克用，葬之吉；用克体，葬之凶；体生用，葬之主运退；用生体，葬之主兴隆，有荫益后嗣\"",
+      "source_refs": [
+        "百度百科",
+        "知乎p/677677458",
+        "乾坤国学院157"
+      ],
+      "yiwen_note": "双源✓",
+      "pending_items": []
+    }
+  ]
+}

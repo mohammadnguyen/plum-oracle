@@ -1,0 +1,38 @@
+{
+  "id": "niuming_004",
+  "title": "牛哀鸣占",
+  "source": { "file": "《梅花易数》.txt", "lines": "392-397" },
+  "method": "object_direction",
+  "input": { "object_gua": "坤", "direction_gua": "坎", "hour_dizhi": "午" },
+  "layer": "A",
+
+  "_design_note": "指物/方位占(§5.3)：牛属坤为上卦、坎方为下卦；动爻=(坤8+坎6+午7)=21→21%6=3。**本案唯一引爻辞者**：师卦六三「师或舆尸，凶」(源 L393)，故 cited_yaoci 填之。惟『引辞(cited_yaoci)』判分维度当前**锁定**(语料未 verified，走 stub)，本字段先记录标准答案，待权威源核定解锁后判分。expected.shengke=机械体-相对列表；原文『互变俱克之，并无生气』=互下震木克坤 + 变巽木克坤。",
+
+  "expected": {
+    "shang_gua": "坤",
+    "xia_gua": "坎",
+    "ben_gua": "地水师",
+    "dong_yao": 3,
+    "bian_gua": "地风升",
+    "hu_shang": "坤",
+    "hu_xia": "震",
+    "ti": "坤",
+    "yong": "坎",
+    "ti_wuxing": "土",
+    "yong_wuxing": "水",
+    "shengke": [
+      { "role": "用",   "from": "坎", "wuxing": "水", "rel": "体克", "tone": "吉（费力）" },
+      { "role": "互上", "from": "坤", "wuxing": "土", "rel": "比和", "tone": "吉" },
+      { "role": "互下", "from": "震", "wuxing": "木", "rel": "克体", "tone": "凶" },
+      { "role": "变",   "from": "巽", "wuxing": "木", "rel": "克体", "tone": "凶" }
+    ],
+    "net": { "ke_ti_count": 2, "sheng_ti_count": 0, "has_rescue": false, "overall": "凶" },
+    "cited_yaoci": [
+      { "gua_name": "地水师", "yao_pos": 3, "yao_name": "六三", "text": "师或舆尸，凶。",
+        "source": { "file": "《梅花易数》.txt", "line": 393 } }
+    ],
+    "reasoning_chain": "牛属坤为上卦，坎方为下卦→地水师；(坤8+坎6+午7)=21，21%6=3→三爻动→师三爻变升(地风升)，互坤震。坤为体(牛之体卦)，用坎水被体坤土所克(体克用，费力)，互下震木克坤、变巽木克坤(互变俱克之)，并无生气→凶。引师卦六三『师或舆尸，凶』，断此牛二十一日内必遭屠。"
+  },
+
+  "interpretation_reference": "断曰：『此牛二十一日内，必遭屠杀。』后二十日，有人果买此牛，杀以犒众。应期『二十一日内』为 B 层叙事，不判分。"
+}

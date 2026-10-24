@@ -1,0 +1,35 @@
+{
+  "id": "mudan_002",
+  "title": "牡丹占",
+  "source": { "file": "《梅花易数》.txt", "lines": "346-352" },
+  "method": "time",
+  "input": { "year_dizhi": "巳", "lunar_month": 3, "lunar_day": 16, "hour_dizhi": "卯" },
+  "layer": "A",
+
+  "_design_note": "expected.shengke 为引擎机械体-相对列表。应期『次日午时』(L348/L351「次日午时，果有官贵观牡丹」) 是 B 层叙事，且常被二手转述误作『第三日』(CLAUDE.md §11 判例)，故只入 interpretation_reference，绝不进 A 层判分。",
+
+  "expected": {
+    "shang_gua": "乾",
+    "xia_gua": "巽",
+    "ben_gua": "天风姤",
+    "dong_yao": 5,
+    "bian_gua": "火风鼎",
+    "hu_shang": "乾",
+    "hu_xia": "乾",
+    "ti": "巽",
+    "yong": "乾",
+    "ti_wuxing": "木",
+    "yong_wuxing": "金",
+    "shengke": [
+      { "role": "用",   "from": "乾", "wuxing": "金", "rel": "克体", "tone": "凶" },
+      { "role": "互上", "from": "乾", "wuxing": "金", "rel": "克体", "tone": "凶" },
+      { "role": "互下", "from": "乾", "wuxing": "金", "rel": "克体", "tone": "凶" },
+      { "role": "变",   "from": "离", "wuxing": "火", "rel": "体生", "tone": "泄气，不利" }
+    ],
+    "net": { "ke_ti_count": 3, "sheng_ti_count": 0, "has_rescue": false, "overall": "凶" },
+    "cited_yaoci": [],
+    "reasoning_chain": "巽木为体→乾金克之(用克体)→互卦又见重乾，克体之卦多矣→卦中无生意(无生体之卦)→故知牡丹必践毁。乾为马，故为马所践。"
+  },
+
+  "interpretation_reference": "巽木为体，乾金克之，互卦又见重乾，克体之卦多矣，卦中无生意，故知牡丹必践毁。所谓马者，乾为马也。午时者，离明之象，是以知之也。应期：此花明日（次日）午时，当为马所践毁。（原书断语，B 层风格锚，不判分）"
+}

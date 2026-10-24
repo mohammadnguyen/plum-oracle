@@ -1,0 +1,23 @@
+{
+  "name": "meihua-yishu-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "梅花易数 · 纯前端确定性排盘与解读 Prompt 导出（无后端、无 LLM 调用）",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "lunar-javascript": "1.7.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "5.6.3",
+    "vite": "5.4.11",
+    "vitest": "2.1.8"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "jiefu_003",
+  "title": "借斧",
+  "source": { "file": "《梅花易数》.txt", "lines": "353-360" },
+  "method": "sound",
+  "input": { "first_count": 1, "second_count": 5, "hour_dizhi": "酉" },
+  "layer": "A",
+
+  "_design_note": "声音占(§5.2)：先响一声属乾(上)、后响五声属巽(下)；动爻=(乾1+巽5+酉10)=16→16%6=4。expected.shengke=机械体-相对列表。B层：金短木长之器、锄/斧之辨靠明理(冬夕用斧劈柴)——数定不出锄斧，故 cited_yaoci 为空、锄斧入 interpretation_reference。源文件名为实际仓库文件《梅花易数》.txt。",
+
+  "expected": {
+    "shang_gua": "乾",
+    "xia_gua": "巽",
+    "ben_gua": "天风姤",
+    "dong_yao": 4,
+    "bian_gua": "巽为风",
+    "hu_shang": "乾",
+    "hu_xia": "乾",
+    "ti": "巽",
+    "yong": "乾",
+    "ti_wuxing": "木",
+    "yong_wuxing": "金",
+    "shengke": [
+      { "role": "用",   "from": "乾", "wuxing": "金", "rel": "克体", "tone": "凶" },
+      { "role": "互上", "from": "乾", "wuxing": "金", "rel": "克体", "tone": "凶" },
+      { "role": "互下", "from": "乾", "wuxing": "金", "rel": "克体", "tone": "凶" },
+      { "role": "变",   "from": "巽", "wuxing": "木", "rel": "比和", "tone": "吉" }
+    ],
+    "net": { "ke_ti_count": 3, "sheng_ti_count": 0, "has_rescue": false, "overall": "凶" },
+    "cited_yaoci": [],
+    "reasoning_chain": "一声属乾为上卦，五声属巽为下卦→天风姤；(乾1+巽5+酉10)=16，16%6=4→四爻动→姤四爻变巽(巽为风)，互见重乾。本卦上乾下巽+互重乾，凡三乾金、二巽木→巽木为体，乾金克之，克体之卦多(用乾/互上乾/互下乾皆金克巽)，卦中无生意→凶。所借为金木之器。"
+  },
+
+  "interpretation_reference": "子乃断曰：『金短木长者，器也，所借者锄也。』先生曰：『非锄，必斧也。』问之果借斧。『于数又须明理，以卦推之，斧亦可也，锄亦可也；以理推之，夕晚安用锄？必借斧，盖斧切于劈柴之用耳。』——锄/斧之辨为 B 层(数定不出，靠明理)，不判分。"
+}
