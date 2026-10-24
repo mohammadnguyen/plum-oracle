@@ -16,6 +16,7 @@ import type { CastResult } from "../engine/result.js";
 import type { DuanshiFull } from "../engine/rules/netassess.js";
 import { boardFacts } from "../engine/rules/netassess.js";
 import { getYaoci, type YaociInfo } from "../engine/corpus/guayaoci.js";
+import { PLAIN_REQUIREMENTS } from "./plainRequirements.js";
 
 const C = contract as { DUANSHI_APPENDIX: string; KOUWEN_FEWSHOT: string; SELF_CHECKLIST: string };
 
@@ -201,11 +202,15 @@ export function duanshiFactLines(dl: Record<string, any>): string[] {
 }
 
 export interface ExportedPrompt {
-  /** 第一段：盘面与规则（确定性事实） */
+  /** 第一段：盘面与规则（确定性事实）。**不可替代**——别处拿不到。 */
   facts: string;
-  /** 第二段：解读要求（契约） */
+  /** 完整解读契约（SYSTEM + 断事铁律 A–P + 自检清单，§0.1 要求逐字保留） */
   contract: string;
-  /** 两段合并，供一次性复制 */
+  /** 精简解读要求（人话版，默认导出用，见 plainRequirements.ts 的理由） */
+  plain: string;
+  /** 盘面 + 精简要求（**界面默认复制的就是这个**） */
+  plainFull: string;
+  /** 盘面 + 完整契约（严格模式；盘面在前，契约在后） */
   full: string;
 }
 
@@ -237,9 +242,16 @@ export function buildExportPrompt(
   contractParts.push(C.SELF_CHECKLIST);
   const contractText = contractParts.join("");
 
+  // 盘面在前、要求在后。顺序是认真的：盘面是别处拿不到的部分，
+  // 契约万一被截断还能重发，盘面被截断这一卦就白排了（live 实测：契约在前时
+  // 用户粘过去，对方回「尚未提供已排好的盘」）。
+  const head =
+    "──────── 本卦盘面与规则（确定性排盘产出，请勿改动一个字）────────\n";
   return {
     facts,
     contract: contractText,
-    full: `${contractText}\n\n──────── 以下为本卦盘面与规则（确定性排盘产出，请勿改动） ────────\n${facts}`,
+    plain: PLAIN_REQUIREMENTS,
+    plainFull: `${head}${facts}\n\n${PLAIN_REQUIREMENTS}`,
+    full: `${head}${facts}\n\n${contractText}`,
   };
 }

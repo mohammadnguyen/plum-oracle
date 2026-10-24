@@ -1,8 +1,11 @@
 /**
  * 界面（纯静态，无后端、无 LLM 调用）。
  *
- * 四步：起卦法 → 输入 → 门类 + 所问之事 → 结果（排盘 + 推演链 + 可复制解读 Prompt）。
- * 信息结构沿用旧 Flask 版：分步起卦、推演链折叠区、门派声明。
+ * 三步：起卦法 → 输入（只问**非你不可**的东西）→ 结果。
+ *   · 时辰、农历日期一律取设备时钟（§3#1/#2/#4/#5，见 engine/now.ts），不问用户；
+ *     要补旧卦的，「改时刻」里可手填。
+ *   · 所问门类由问句**确定性关键词规则**自动判（engine/rules/menDetect.ts），
+ *     判定结果摆在明面上、一键可改——门类决定查哪张表的基础极性，不能默默替用户定。
  */
 import { divine, type CastResult } from "../engine/result.js";
 import type { CastMethod } from "../engine/cast.js";
@@ -10,23 +13,39 @@ import { DIZHI, COLOR_TO_GUA, declarations } from "../engine/lineage.js";
 import { TRIGRAM_ORDER } from "../engine/gua64.js";
 import { duanshiFull, type DuanshiFull } from "../engine/rules/netassess.js";
 import { allDoors } from "../engine/rules/duanshiLookup.js";
+import { detectMen, MEN_LABEL } from "../engine/rules/menDetect.js";
+import { nowTimeInputs } from "../engine/now.js";
 import { buildExportPrompt } from "../prompt/buildPrompt.js";
 import { corpusInfo } from "../engine/corpus/guayaoci.js";
-import { Solar } from "lunar-javascript";
+import { plainRead } from "./plainRead.js";
 
 // ── 状态 ────────────────────────────────────────────────────────────────
+type MethodUi = "time" | "number" | "object_direction" | "color";
+
 interface State {
-  screen: 1 | 2 | 3 | 4;
+  screen: 1 | 2 | 3;
   method: CastMethod | null;
+  methodUi: MethodUi | null;
   inputs: Record<string, any>;
+  /** 自动判定的门；用户改过则 menOverridden=true */
   men: number | null;
+  menOverridden: boolean;
+  menMatched: string[];
+  menFallback: boolean;
   question: string;
   posture: string | null;
+  /** 起卦所用时刻取数（默认此刻，可手改） */
+  now: ReturnType<typeof nowTimeInputs>;
+  timeEdited: boolean;
+  contractMode: "plain" | "full";
   includeFewshot: boolean;
 }
 const state: State = {
-  screen: 1, method: null, inputs: {}, men: null, question: "", posture: null,
-  includeFewshot: false,
+  screen: 1, method: null, methodUi: null, inputs: {},
+  men: null, menOverridden: false, menMatched: [], menFallback: true,
+  question: "", posture: null,
+  now: nowTimeInputs(), timeEdited: false,
+  contractMode: "plain", includeFewshot: false,
 };
 
 const app = document.getElementById("app")!;
@@ -51,21 +70,13 @@ function toast(msg: string): void {
   setTimeout(() => t!.classList.remove("show"), 1600);
 }
 
-/** 当前农历月（非 time 法的旺衰节令用，对应旧版 _cur_month）。 */
-function currentLunarMonth(): number {
-  const n = new Date();
-  const l = Solar.fromYmdHms(
-    n.getFullYear(), n.getMonth() + 1, n.getDate(), n.getHours(), 0, 0,
-  ).getLunar();
-  return Math.abs(l.getMonth());
-}
-
-/** 当前时辰地支（供输入默认值）。 */
-function currentHourDizhi(): string {
-  const h = new Date().getHours();
-  // 子时 23–1，丑 1–3 …（早子时归次日为软件约定，见门派声明）
-  const idx = Math.floor(((h + 1) % 24) / 2);
-  return DIZHI[idx]!;
+/** 按问句重判门类；用户手动改过之后不再覆盖。 */
+function syncMen(): void {
+  if (state.menOverridden) return;
+  const d = detectMen(state.question);
+  state.men = d.menId;
+  state.menMatched = d.matched;
+  state.menFallback = d.fallback;
 }
 
 // ── 渲染 ────────────────────────────────────────────────────────────────
@@ -78,7 +89,7 @@ function render(): void {
       <div class="badge">象数 · 非占验</div>
     </header>`));
 
-  ({ 1: s1, 2: s2, 3: s3, 4: s4 })[state.screen]();
+  ({ 1: s1, 2: s2, 3: s3 })[state.screen]();
 
   app.appendChild(el(`
     <footer class="site">
@@ -97,23 +108,23 @@ function backBtn(to: State["screen"]): HTMLElement {
 
 // 屏1：起卦法
 function s1(): void {
-  app.appendChild(el(`<div class="step">第 1/4 步 · 起卦法</div>`));
+  app.appendChild(el(`<div class="step">第 1/3 步 · 怎么起卦</div>`));
   const c = el(`<div class="card"></div>`);
   // UI 别名：「报数」在界面上是独立一法，算法与声音占同构（父法为物数占），
   // 故 methodUi 记 UI 选项、state.method 记引擎法名。
-  type MethodUi = "time" | "number" | "object_direction" | "color";
   const METHODS: Array<[MethodUi, string, string]> = [
-    ["time", "年月日时起卦", "原书法 · 卷一十四（L165）。以年支、农历月日与时支取数"],
-    ["number", "报数起卦", "后世通行法 · 父法为物数占（卷一十五 L170-171）。报两个数"],
-    ["object_direction", "指物 · 方位起卦", "原书法 · 端法后天起卦（L303）。所见之物为上卦、方位为下卦"],
-    ["color", "验色 · 服色起卦", "原书法 · 卷一四十三（L438）。上衣色为上卦、下衣色为下卦"],
+    ["time", "此刻起卦", "原书年月日时法（卷一十四 L165）。时间从你手机上取，什么都不用填"],
+    ["number", "报数起卦", "后世通行法 · 父法为物数占（卷一十五 L170-171）。心里想两个数报上来"],
+    ["object_direction", "指物 · 方位起卦", "原书端法后天起卦（L303）。你所见之物为上卦、所在方位为下卦"],
+    ["color", "验色 · 服色起卦", "原书卷一四十三（L438）。来人上衣色为上卦、下衣色为下卦"],
   ];
   for (const [m, name, hint] of METHODS) {
     const b = el(`<button>${esc(name)}<span class="hint">${esc(hint)}</span></button>`);
     b.onclick = () => {
       state.method = m === "number" ? "sound" : (m as CastMethod);
-      (state as any).methodUi = m;
+      state.methodUi = m;
       state.inputs = {};
+      if (!state.timeEdited) state.now = nowTimeInputs();
       state.screen = 2;
       render();
     };
@@ -122,118 +133,161 @@ function s1(): void {
   app.appendChild(c);
 }
 
-// 屏2：输入
-function s2(): void {
-  app.appendChild(el(`<div class="step">第 2/4 步 · 起卦输入</div>`));
-  app.appendChild(backBtn(1));
-  const ui = (state as any).methodUi as string;
-  const c = el(`<div class="card"></div>`);
-  const hour = currentHourDizhi();
-
+/** 时刻卡：默认只显示一行「此刻是…」，展开才给手填（补旧卦用）。 */
+function timeCard(needDate: boolean): HTMLElement {
+  const n = state.now;
   const dizhiSel = (id: string, label: string, def: string) => `
     <label>${esc(label)}</label>
     <select id="${id}">${DIZHI.map((d) => `<option value="${d}"${d === def ? " selected" : ""}>${d}</option>`).join("")}</select>`;
 
-  if (ui === "time") {
-    c.innerHTML = `
-      ${dizhiSel("f_year", "年支（例 2026 年为丙午年 → 午）", "午")}
-      <div class="row">
-        <div><label>农历月（1–12）</label><input id="f_month" type="number" min="1" max="12" value="1" /></div>
-        <div><label>农历日（1–30）</label><input id="f_day" type="number" min="1" max="30" value="1" /></div>
-      </div>
-      ${dizhiSel("f_hour", "时支", hour)}
-      <p class="note">年数、时数取地支序数（子1…亥12）；月数、日数取农历本数。见底部门派声明。</p>`;
-  } else if (ui === "number") {
-    c.innerHTML = `
-      <div class="row">
-        <div><label>先报之数</label><input id="f_a" type="number" min="1" value="3" /></div>
-        <div><label>后报之数</label><input id="f_b" type="number" min="1" value="7" /></div>
-      </div>
-      ${dizhiSel("f_hour", "时支", hour)}
-      <p class="note">报数为后世通行法，原书无此例；本站以物数占（卷一十五）为父法，算法与声音占同构。</p>`;
+  const card = el(`
+    <div class="card">
+      <div class="kv">🕒 ${esc(n.note)}</div>
+      <details>
+        <summary>改时刻（补旧卦、或你知道确切农历日期时才用）</summary>
+        ${needDate ? dizhiSel("f_year", "年支（例 2026 年丙午 → 午）", n.year_dizhi) : ""}
+        ${needDate ? `<div class="row">
+          <div><label>农历月（1–12）</label><input id="f_month" type="number" min="1" max="12" value="${n.lunar_month}" /></div>
+          <div><label>农历日（1–30）</label><input id="f_day" type="number" min="1" max="30" value="${n.lunar_day}" /></div>
+        </div>` : ""}
+        ${dizhiSel("f_hour", "时支", n.hour_dizhi)}
+        <p class="note">年数、时数取地支序数（子1…亥12）；月数、日数取农历本数。23 时起算次日为软件约定，非原书所定。</p>
+      </details>
+    </div>`);
+
+  const grab = () => {
+    const g = (id: string) => (document.getElementById(id) as HTMLInputElement | null)?.value;
+    const h = g("f_hour");
+    const y = g("f_year");
+    const m = g("f_month");
+    const d = g("f_day");
+    const changed =
+      (h && h !== n.hour_dizhi) || (y && y !== n.year_dizhi) ||
+      (m && Number(m) !== n.lunar_month) || (d && Number(d) !== n.lunar_day);
+    if (changed) state.timeEdited = true;
+    return {
+      year_dizhi: y || n.year_dizhi,
+      lunar_month: m ? Number(m) : n.lunar_month,
+      lunar_day: d ? Number(d) : n.lunar_day,
+      hour_dizhi: h || n.hour_dizhi,
+    };
+  };
+  (card as any).__grab = grab;
+  return card;
+}
+
+// 屏2：输入（只问非用户不可的东西 + 所问之事）
+function s2(): void {
+  app.appendChild(el(`<div class="step">第 2/3 步 · 你问什么</div>`));
+  app.appendChild(backBtn(1));
+  const ui = state.methodUi!;
+
+  // 所问之事：既是解读情境，也是门类自动判定的唯一依据
+  const qc = el(`
+    <div class="card">
+      <label>你想问什么？写一句就行</label>
+      <textarea id="f_q" maxlength="300" placeholder="例：下周去杭州谈一单生意，能不能成？">${esc(state.question)}</textarea>
+      <div class="note" style="text-align:right"><span id="qn">0</span>/300</div>
+      <div class="kv" id="menline"></div>
+      <p class="note">所问只作解读情境与门类判定，不参与排盘，也不改变任何吉凶判定。</p>
+    </div>`);
+  app.appendChild(qc);
+  const ta = qc.querySelector("#f_q") as HTMLTextAreaElement;
+  const qn = qc.querySelector("#qn") as HTMLElement;
+  const menline = qc.querySelector("#menline") as HTMLElement;
+  const paintMen = () => {
+    syncMen();
+    menline.textContent = state.menFallback
+      ? "未认出门类 → 按「人事占」断（结果页可改）"
+      : `已自动判为「${MEN_LABEL[state.men!]}」（认出：${state.menMatched.join("、")}）`;
+  };
+  qn.textContent = String(state.question.length);
+  paintMen();
+  ta.oninput = () => {
+    state.question = ta.value;
+    qn.textContent = String(ta.value.length);
+    paintMen();
+  };
+
+  // 起卦必需输入（只有确实非用户不可的那些）
+  let inputCard: HTMLElement | null = null;
+  if (ui === "number") {
+    inputCard = el(`
+      <div class="card">
+        <div class="row">
+          <div><label>先报之数</label><input id="f_a" type="number" min="1" value="3" /></div>
+          <div><label>后报之数</label><input id="f_b" type="number" min="1" value="7" /></div>
+        </div>
+        <p class="note">报数为后世通行法，原书无此例；本站以物数占（卷一十五）为父法，算法与声音占同构。</p>
+      </div>`);
   } else if (ui === "object_direction") {
     const opts = TRIGRAM_ORDER.map((g) => `<option value="${g}">${g}</option>`).join("");
-    c.innerHTML = `
-      <label>所见之物属卦（上卦）</label><select id="f_obj">${opts}</select>
-      <label>方位属卦（下卦）</label><select id="f_dir">${opts}</select>
-      ${dizhiSel("f_hour", "时支", hour)}`;
-  } else {
-    const colors = Object.keys(COLOR_TO_GUA);
-    const opts = colors.map((x) => `<option value="${x}">${x}（${COLOR_TO_GUA[x]}）</option>`).join("");
-    c.innerHTML = `
-      <label>上衣颜色（上卦）</label><select id="f_uc">${opts}</select>
-      <label>下衣颜色（下卦）</label><select id="f_lc">${opts}</select>
-      ${dizhiSel("f_hour", "时支", hour)}`;
+    inputCard = el(`
+      <div class="card">
+        <label>所见之物属卦（上卦）</label><select id="f_obj">${opts}</select>
+        <label>方位属卦（下卦）</label><select id="f_dir">${opts}</select>
+      </div>`);
+  } else if (ui === "color") {
+    const opts = Object.keys(COLOR_TO_GUA)
+      .map((x) => `<option value="${x}">${x}（${COLOR_TO_GUA[x]}）</option>`).join("");
+    inputCard = el(`
+      <div class="card">
+        <label>上衣颜色（上卦）</label><select id="f_uc">${opts}</select>
+        <label>下衣颜色（下卦）</label><select id="f_lc">${opts}</select>
+      </div>`);
   }
-  app.appendChild(c);
+  if (inputCard) app.appendChild(inputCard);
 
-  const go = el(`<button class="primary">下一步 · 选所问门类</button>`);
+  const tc = timeCard(ui === "time");
+  app.appendChild(tc);
+
+  const go = el(`<button class="primary">起卦</button>`);
   go.onclick = () => {
+    state.question = ta.value;
+    syncMen();
+    const t = (tc as any).__grab() as ReturnType<typeof nowTimeInputs>;
     const v = (id: string) => (document.getElementById(id) as HTMLInputElement | HTMLSelectElement).value;
     if (ui === "time") {
       state.inputs = {
-        year_dizhi: v("f_year"), lunar_month: Number(v("f_month")),
-        lunar_day: Number(v("f_day")), hour_dizhi: v("f_hour"),
+        year_dizhi: t.year_dizhi, lunar_month: t.lunar_month,
+        lunar_day: t.lunar_day, hour_dizhi: t.hour_dizhi,
       };
     } else if (ui === "number") {
-      state.inputs = { first_count: Number(v("f_a")), second_count: Number(v("f_b")), hour_dizhi: v("f_hour") };
+      state.inputs = { first_count: Number(v("f_a")), second_count: Number(v("f_b")), hour_dizhi: t.hour_dizhi };
     } else if (ui === "object_direction") {
-      state.inputs = { object_gua: v("f_obj"), direction_gua: v("f_dir"), hour_dizhi: v("f_hour") };
+      state.inputs = { object_gua: v("f_obj"), direction_gua: v("f_dir"), hour_dizhi: t.hour_dizhi };
     } else {
-      state.inputs = { upper_color: v("f_uc"), lower_color: v("f_lc"), hour_dizhi: v("f_hour") };
+      state.inputs = { upper_color: v("f_uc"), lower_color: v("f_lc"), hour_dizhi: t.hour_dizhi };
     }
+    state.inputs.__lunar_month = t.lunar_month;   // 旺衰节令用，不入排盘取数
     state.screen = 3;
     render();
   };
   app.appendChild(go);
 }
 
-// 屏3：门类 + 所问之事
+// 屏3：结果
 function s3(): void {
-  app.appendChild(el(`<div class="step">第 3/4 步 · 所问何事</div>`));
-  app.appendChild(backBtn(2));
-
-  const qc = el(`
-    <div class="card">
-      <label>你想问什么？（可选，写得越具体，解读越贴你的事）</label>
-      <textarea id="f_q" maxlength="300" placeholder="例：下周去杭州谈一单生意，能不能成？">${esc(state.question)}</textarea>
-      <div class="note" style="text-align:right"><span id="qn">0</span>/300</div>
-      <p class="note">所问只作解读情境，不参与排盘，也不改变任何吉凶判定。</p>
-    </div>`);
-  app.appendChild(qc);
-  const ta = qc.querySelector("#f_q") as HTMLTextAreaElement;
-  const qn = qc.querySelector("#qn") as HTMLElement;
-  qn.textContent = String(state.question.length);
-  ta.oninput = () => { state.question = ta.value; qn.textContent = String(ta.value.length); };
-
-  const COMMON = [2, 3, 5, 10, 16, 12];
-  const doors = [...allDoors()].sort((a: any, b: any) => {
-    const ca = COMMON.includes(a.men_id) ? 0 : 1;
-    const cb = COMMON.includes(b.men_id) ? 0 : 1;
-    return ca - cb || a.men_id - b.men_id;
-  });
-  const c = el(`<div class="card"></div>`);
-  for (const d of doors as any[]) {
-    const star = COMMON.includes(d.men_id) ? "★ " : "";
-    const b = el(`<button>${esc(star + d.men_label)}</button>`);
-    b.onclick = () => { state.question = ta.value; state.men = d.men_id; state.screen = 4; render(); };
-    c.appendChild(b);
-  }
-  app.appendChild(c);
-}
-
-// 屏4：结果
-function s4(): void {
-  app.appendChild(el(`<div class="step">第 4/4 步 · 盘面与解读 Prompt</div>`));
+  app.appendChild(el(`<div class="step">第 3/3 步 · 盘面与解读 Prompt</div>`));
   const again = el(`<button class="ghost inline">← 重新起卦</button>`);
-  again.onclick = () => { Object.assign(state, { screen: 1, method: null, inputs: {}, men: null }); render(); };
+  again.onclick = () => {
+    Object.assign(state, {
+      screen: 1, method: null, methodUi: null, inputs: {},
+      menOverridden: false, timeEdited: false, now: nowTimeInputs(),
+    });
+    render();
+  };
   app.appendChild(again);
+
+  const lunarMonth = state.inputs.__lunar_month ?? state.now.lunar_month;
+  const castInputs = { ...state.inputs };
+  delete castInputs.__lunar_month;
 
   let r: CastResult;
   let full: DuanshiFull;
   try {
-    r = divine(state.method!, state.inputs);
-    full = duanshiFull(state.men!, r, { posture: state.posture, lunarMonth: currentLunarMonth() });
+    r = divine(state.method!, castInputs);
+    full = duanshiFull(state.men!, r, { posture: state.posture, lunarMonth });
   } catch (e) {
     app.appendChild(el(`<div class="card">排盘输入无效：${esc((e as Error).message)}</div>`));
     return;
@@ -245,7 +299,7 @@ function s4(): void {
     <div class="card">
       <div class="guaname">${esc(r.ben_gua)} · 第${r.dong_yao}爻动 → ${esc(r.bian_gua)}</div>
       <div class="verdict ${cls}">${esc(fv)}</div>
-      <div class="meta">${esc(full.domain_semantics.men_label)} · ${esc(full.verdict_from ?? "")}</div>
+      <div class="meta">${esc((full.domain_semantics as any).men_label)} · ${esc(full.verdict_from ?? "")}</div>
       ${full.xiangyi_review_flag ? '<div class="flagline">⚠ 全比和 · 象义待核（据理而断通道）</div>' : ""}
       <div class="watermark">规则表 ${esc((full.domain as any).table_status)}</div>
     </div>`);
@@ -256,8 +310,52 @@ function s4(): void {
     app.appendChild(el(`<div class="card">✍️ 所问：${esc(state.question.trim())}</div>`));
   }
 
-  app.appendChild(chainCard(r, full));
+  app.appendChild(menCard());
+  app.appendChild(plainCard(r, full));
   app.appendChild(promptCard(r, full));
+  app.appendChild(chainCard(r, full));
+}
+
+/** 门类：自动判定摆明面 + 一键改。 */
+function menCard(): HTMLElement {
+  const why = state.menOverridden
+    ? "你手动选的"
+    : state.menFallback
+      ? "问句里没认出门类关键词，按「人事占」兜底（原书十八占末「占者以类而推之可也」）"
+      : `按问句里的「${state.menMatched.join("、")}」自动判定`;
+  const card = el(`
+    <div class="card">
+      <div class="kv">所占门类：<b>${esc(MEN_LABEL[state.men!])}</b> —— ${esc(why)}</div>
+      <details>
+        <summary>不对？换一门（门类决定查哪张表的基础极性，会改变断语方向）</summary>
+        <div id="men_list" class="doorgrid"></div>
+      </details>
+    </div>`);
+  const list = card.querySelector("#men_list") as HTMLElement;
+  for (const d of allDoors() as any[]) {
+    const b = el(`<button class="inline${d.men_id === state.men ? " primary" : ""}">${esc(d.men_label)}</button>`);
+    b.onclick = () => {
+      state.men = d.men_id;
+      state.menOverridden = true;
+      render();
+    };
+    list.appendChild(b);
+  }
+  return card;
+}
+
+/** 盘面直译：固定对照表翻的人话，不是 AI 解读。 */
+function plainCard(r: CastResult, f: DuanshiFull): HTMLElement {
+  const lines = plainRead(r, f)
+    .map((l) => `<div class="kv">${esc(l.text)}<span class="src">依据：${esc(l.src)}</span></div>`)
+    .join("");
+  return el(`
+    <div class="card">
+      <div class="guaname" style="text-align:left;font-size:15px;color:var(--ink)">这张盘在说什么</div>
+      <p class="note">下面每行都是程序按固定对照表把术语换成人话，不是解读、不含推断——
+        同一张盘永远翻出同一段字。成篇的解读请把下方 Prompt 复制给你自己的 AI。</p>
+      ${lines}
+    </div>`);
 }
 
 /** 六爻卦画：本卦 / 变卦，动爻高亮。bits 为 bottom→top，显示自上而下。 */
@@ -279,17 +377,39 @@ function hexDiagram(r: CastResult): HTMLElement {
   </div>`);
 }
 
-/** 推演链折叠区。 */
+/** 起卦取数的人读版（替代原来直接打印 JSON trace）。未登记的键一律不显示。 */
+const TRACE_NAME: Readonly<Record<string, string>> = Object.freeze({
+  // 原始输入
+  year_dizhi: "年支", lunar_month: "农历月", lunar_day: "农历日", hour_dizhi: "时支",
+  first_count: "先报之数", second_count: "后报之数",
+  object_gua: "所见之物属卦", direction_gua: "方位属卦",
+  upper_color: "上衣色", lower_color: "下衣色",
+  // 取数中间量
+  year_num: "年数", month_num: "月数", day_num: "日数", hour_num: "时数",
+  upper_total: "上卦总数", lower_total: "下卦总数",
+  shang_num: "上卦数", xia_num: "下卦数",
+});
+
+function traceLine(r: CastResult): string {
+  const pick = (o: Record<string, unknown>) =>
+    Object.entries(o)
+      .filter(([k, v]) => TRACE_NAME[k] !== undefined && v !== null && v !== undefined)
+      .map(([k, v]) => `${TRACE_NAME[k]} ${v}`);
+  return [...pick(r.inputs), ...pick(r.trace)].join(" · ");
+}
+
+/** 推演链折叠区（技术细节，默认全部收起）。 */
 function chainCard(r: CastResult, f: DuanshiFull): HTMLElement {
   const kv = (s: unknown) => `<div class="kv">${esc(s)}</div>`;
   const parts: string[] = [];
+  const ds = f.domain_semantics as any;
 
-  parts.push(`<details open><summary>排盘</summary>
+  parts.push(`<details><summary>排盘</summary>
     ${kv(`上卦 ${r.shang_gua} / 下卦 ${r.xia_gua} → 本卦 ${r.ben_gua}（${r.ben_short}）`)}
     ${kv(`互卦 ${r.hu_gua}（上${r.hu_shang} 下${r.hu_xia}）`)}
     ${kv(`动爻 第${r.dong_yao}爻 → 变卦 ${r.bian_gua}`)}
     ${kv(`体 ${r.ti}(${r.ti_wuxing}) · 用 ${r.yong}(${r.yong_wuxing})（含动爻之卦为用）`)}
-    ${kv(`起卦取数：${JSON.stringify(r.trace)}`)}
+    ${kv(`起卦取数：${traceLine(r)}`)}
   </details>`);
 
   parts.push(`<details><summary>生克与净评</summary>
@@ -299,9 +419,9 @@ function chainCard(r: CastResult, f: DuanshiFull): HTMLElement {
   </details>`);
 
   parts.push(`<details><summary>门类查表</summary>
-    ${kv(`${f.domain_semantics.men_label} · 体用关系 ${f.domain_semantics.relation ?? "—"} → 基础极性 ${f.base_polarity ?? "—"}`)}
-    ${f.domain_semantics.duanyu_template ? kv(`断语模板：${f.domain_semantics.duanyu_template}`) : ""}
-    ${kv(`原文依据：「${f.domain_semantics.source_quote}」`)}
+    ${kv(`${ds.men_label} · 体用关系 ${ds.relation ?? "—"} → 基础极性 ${f.base_polarity ?? "—"}`)}
+    ${ds.duanyu_template ? kv(`断语模板：${ds.duanyu_template}`) : ""}
+    ${kv(`原文依据：「${ds.source_quote}」`)}
   </details>`);
 
   if (f.wangshuai_readable) {
@@ -351,37 +471,54 @@ function chainCard(r: CastResult, f: DuanshiFull): HTMLElement {
     ${kv(`语料：${corpusInfo().source}（verified=${corpusInfo().verified}，${corpusInfo().hexagrams} 卦）`)}
   </details>`);
 
-  return el(`<div class="card">${parts.join("")}</div>`);
+  return el(`<div class="card">
+    <div class="guaname" style="text-align:left;font-size:15px;color:var(--ink)">推演链 · 每一步都可查</div>
+    ${parts.join("")}
+  </div>`);
 }
 
-/** 可复制解读 Prompt。 */
+/** 可复制解读 Prompt。默认 = 盘面 + 精简要求（人话版）。 */
 function promptCard(r: CastResult, f: DuanshiFull): HTMLElement {
-  const render = () => buildExportPrompt(r, f, {
+  const build = () => buildExportPrompt(r, f, {
     question: state.question.trim() || null,
     includeFewshot: state.includeFewshot,
   });
-  let out = render();
+  let out = build();
+  const pick = () => (state.contractMode === "full" ? out.full : out.plainFull);
 
   const card = el(`
     <div class="card">
-      <div class="guaname" style="text-align:left;font-size:15px;color:var(--ink)">把下面这段复制给你的 AI，它就能据此解读</div>
-      <p class="note">本站不调用任何 AI。以下文本由确定性排盘产出：盘面事实 + 解读要求。两段可分开复制。</p>
-      <label><input type="checkbox" id="f_fs" style="width:auto" /> 附带口吻范例（文本更长，解读风格更稳）</label>
+      <div class="guaname" style="text-align:left;font-size:15px;color:var(--ink)">把这段复制给你的 AI，让它解这一卦</div>
+      <p class="note">本站不调用任何 AI。文本由确定性排盘产出：<b>先盘面，后要求</b>——
+        盘面是别处拿不到的部分，万一被截断，先保住它。</p>
       <div style="margin-top:10px">
-        <button class="inline primary" id="b_all">复制全文</button>
-        <button class="inline" id="b_facts">只复制「盘面与规则」</button>
-        <button class="inline" id="b_contract">只复制「解读要求」</button>
+        <button class="inline primary" id="b_all">复制（盘面 + 解读要求）</button>
+        <button class="inline" id="b_facts">只复制盘面</button>
       </div>
-      <details open style="margin-top:6px"><summary>预览</summary><pre class="prompt" id="pv"></pre></details>
+      <details style="margin-top:8px">
+        <summary>高级：换成完整契约 / 附口吻范例（文本会长很多）</summary>
+        <label><input type="checkbox" id="f_mode" style="width:auto" /> 用<b>完整解读契约</b>（断事铁律 A–P + 自检清单，逐字原文；要求输出严格 JSON，更严格但更难读）</label>
+        <label><input type="checkbox" id="f_fs" style="width:auto" /> 附带口吻范例（仅在完整契约下有意义）</label>
+      </details>
+      <details style="margin-top:6px"><summary>预览（<span id="len"></span> 字）</summary><pre class="prompt" id="pv"></pre></details>
     </div>`);
 
   const pv = card.querySelector("#pv") as HTMLElement;
-  const paint = () => { pv.textContent = out.full; };
+  const len = card.querySelector("#len") as HTMLElement;
+  const paint = () => {
+    const text = pick();
+    pv.textContent = text;
+    len.textContent = String(text.length);
+  };
   paint();
 
+  (card.querySelector("#f_mode") as HTMLInputElement).onchange = (e) => {
+    state.contractMode = (e.target as HTMLInputElement).checked ? "full" : "plain";
+    paint();
+  };
   (card.querySelector("#f_fs") as HTMLInputElement).onchange = (e) => {
     state.includeFewshot = (e.target as HTMLInputElement).checked;
-    out = render();
+    out = build();
     paint();
   };
 
@@ -399,9 +536,8 @@ function promptCard(r: CastResult, f: DuanshiFull): HTMLElement {
       setTimeout(() => ta.remove(), 8000);
     }
   };
-  (card.querySelector("#b_all") as HTMLElement).onclick = () => copy(out.full, "全文");
-  (card.querySelector("#b_facts") as HTMLElement).onclick = () => copy(out.facts, "盘面与规则");
-  (card.querySelector("#b_contract") as HTMLElement).onclick = () => copy(out.contract, "解读要求");
+  (card.querySelector("#b_all") as HTMLElement).onclick = () => copy(pick(), "全文");
+  (card.querySelector("#b_facts") as HTMLElement).onclick = () => copy(out.facts, "盘面");
   return card;
 }
 

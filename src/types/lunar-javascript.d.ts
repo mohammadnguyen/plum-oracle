@@ -3,6 +3,8 @@ declare module "lunar-javascript" {
   export interface Lunar {
     getMonth(): number;
     getDay(): number;
+    getYearZhi(): string;
+    getTimeZhi(): string;
     getYearInGanZhi(): string;
     getMonthInGanZhi(): string;
     getDayInGanZhi(): string;
