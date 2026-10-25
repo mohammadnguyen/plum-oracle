@@ -176,10 +176,57 @@ describe("导出文本：盘面在前，默认要求是人话版", () => {
     }
   });
 
-  it("精简要求显著短于完整契约，且完整契约逐字可用", () => {
-    expect(out.plain.length).toBeLessThan(out.contract.length / 2);
+  it("默认要求短于完整契约，且完整契约逐字可用", () => {
+    // 第二版应用户「过于精简」的反馈加长了（约 1,600 → 4,800 字），但仍须短于完整契约：
+    // 默认导出是给手机用户粘的，不能比严格模式还重。
+    expect(out.plain.length).toBeLessThan(out.contract.length);
+    expect(out.plainFull.length).toBeLessThan(out.full.length);
     expect(out.contract).toContain("【断事追加铁律（在上述规则之上）】");
     expect(out.contract).toContain("【输出前逐条自查");
+  });
+
+  it("签收水印不是屏蔽：要求里必须写明，喂入的化解条目照常使用（第一版实证缺陷）", () => {
+    // 第一版上线后，用户的 Claude 看到化解条目旁的「第七表待签收」水印，
+    // 误当成 pending 屏蔽而拒引——要求文本必须把两者分开说清。
+    expect(out.plain).toContain("不是屏蔽");
+    expect(out.plain).toContain("[pending·屏蔽·不得引用]");
+    expect(out.plain).toContain("是否得吉，仍在人事。");
+  });
+
+  it("示例句不得取自用户实测那张盘（评审发现同盘示例会被原句照搬）", () => {
+    // 实测盘：地水师九二动 → 坤为地，互地雷复，求财，问比特币涨势，应期甲乙日/寅卯日
+    for (const leak of [
+      "比特币", "BTC", "多单", "杠杆", "止损",  // 「价位」只出现在禁令里（不给价位），不算泄题
+      "地水师", "地雷复", "王三锡命", "在师中", "牝马", "丈人", "先迷后得主",
+      "藏器", "恐有失陷", "动处求财", "静中得财",
+    ]) {
+      expect(out.plain.includes(leak), `要求文本含实测盘内容「${leak}」`).toBe(false);
+    }
+  });
+
+  it("换盘复测补上的条文都在（乾为天·婚姻、天火同人·疾病两盘评审结论）", () => {
+    for (const must of [
+      "问的是别人的事",            // 代占：体落成那个人，指代不来回换
+      "不断言病人实际有某病某症",  // 疾病取象不当诊断
+      "卦辞说的是整卦",            // 不按动爻把卦辞归某一方
+      "「无咎」是免了过错",        // 无咎不当托底
+      "不给日子定性",              // 应期只在盘面写明取自克/生体之卦时才说要防/应验
+      "不扯五行干支",              // 卦数一路不提五行
+      "象义待核",                  // 张力写进转折段、不用盘外卦德
+      "不许只截顺着极性的半句",    // 取象不挑半句
+    ]) {
+      expect(out.plain, `要求缺「${must}」`).toContain(must);
+    }
+    // 已撤回的门派性条文不得回来：相反字眼「归哪一方」等于规定一律归对方（动爻恒在用卦）
+    expect(out.plain).not.toContain("说清这份吉（或凶）归哪一方");
+    // 健康类不给成句示例（复测中被逐句照搬）
+    for (const x of ["复诊", "医嘱"]) expect(out.plain.includes(x), `要求含健康示例「${x}」`).toBe(false);
+  });
+
+  it("示例句不写死任何应期日子（防止被抄进别的盘）", () => {
+    for (const d of ["甲乙日", "丙丁日", "戊己日", "庚辛日", "壬癸日", "寅卯日", "巳午日", "申酉日", "亥子日"]) {
+      expect(out.plain.includes(d), `要求文本写死了 ${d}`).toBe(false);
+    }
   });
 });
 
