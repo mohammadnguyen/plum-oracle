@@ -21,12 +21,19 @@ import { buildTianjiang } from "../src/engine/liuren/tianjiang.js";
 interface Case {
   day: string; shi: Zhi; yj: Zhi; gui: Zhi;
   chuan: [string, string, string];
-  ring: Record<string, [string, string, string]>;
+  /** 第二轮只记三传（专攻分支覆盖），没抓天地盘 */
+  ring?: Record<string, [string, string, string]>;
+  /** 该组走到的宗门分支，供覆盖率断言 */
+  branch?: string;
+  /** true = 另经第二家独立实现确认 */
+  both?: boolean;
 }
 const fixture = JSON.parse(
   readFileSync(fileURLToPath(new URL("./fixtures/liuren_crosscheck.json", import.meta.url)), "utf-8"),
 ) as { cases: Case[] };
 const CASES = fixture.cases;
+/** 带天地盘的组（第一轮），逐格比对用 */
+const RING_CASES = CASES.filter((c) => c.ring);
 
 /** 夹具里的日干支必须是真干支，否则夹具本身就抄错了。 */
 function parseDay(day: string): { gan: Gan; zhi: Zhi } {
@@ -42,37 +49,37 @@ function zhouFromGuiren(gan: Gan, gui: Zhi, plate: ReturnType<typeof buildPlate>
   return null;
 }
 
-describe(`大六壬对拍（${CASES.length} 组独立实现）`, () => {
+describe(`大六壬对拍（${CASES.length} 组，其中 ${RING_CASES.length} 组带全盘）`, () => {
   it("夹具自洽：日干支合法、十二地盘齐全、三传三位", () => {
     for (const c of CASES) {
       parseDay(c.day);
-      expect(Object.keys(c.ring), `${c.day}${c.shi} 地盘不足十二位`).toHaveLength(12);
+      if (c.ring) expect(Object.keys(c.ring), `${c.day}${c.shi} 地盘不足十二位`).toHaveLength(12);
       expect(c.chuan).toHaveLength(3);
     }
   });
 
   it("天地盘逐格一致（月将加占时）", () => {
     const bad: string[] = [];
-    for (const c of CASES) {
+    for (const c of RING_CASES) {
       const p = buildPlate(c.yj, c.shi);
-      for (const [di, [tian]] of Object.entries(c.ring)) {
+      for (const [di, [tian]] of Object.entries(c.ring!)) {
         if (p.tian[di] !== tian) bad.push(`${c.day}${c.shi}时 月将${c.yj}：地盘${di} 对方=${tian} 我方=${p.tian[di]}`);
       }
     }
     expect(bad, bad.slice(0, 8).join("\n")).toEqual([]);
   });
 
-  it("遁干与旬空逐格一致（〇 = 旬空无遁干）", () => {
+  it("遁干与旬空逐字一致（〇 = 旬空无遁干）", () => {
     const bad: string[] = [];
-    for (const c of CASES) {
+    for (const c of RING_CASES) {
       const p = buildPlate(c.yj, c.shi);
-      for (const [di, [tian, dun]] of Object.entries(c.ring)) {
+      for (const [di, [tian, dun]] of Object.entries(c.ring!)) {
         expect(p.tian[di]).toBe(tian);
         const mine = dunGan(c.day, tian) ?? "〇";
         if (mine !== dun) bad.push(`${c.day}：天盘${tian} 对方遁=${dun} 我方=${mine}`);
       }
       // 空亡两支必须正好是对方标〇的那两支所乘之位
-      const kongTian = Object.values(c.ring).filter(([, d]) => d === "〇").map(([t]) => t).sort();
+      const kongTian = Object.values(c.ring!).filter(([, d]) => d === "〇").map(([t]) => t).sort();
       expect(kongTian, `${c.day} 旬空支不符`).toEqual([...xunKong(c.day).kongwang].sort());
     }
     expect(bad, bad.slice(0, 8).join("\n")).toEqual([]);
@@ -80,13 +87,13 @@ describe(`大六壬对拍（${CASES.length} 组独立实现）`, () => {
 
   it("十二天将逐格一致（贵人起例「甲戊庚牛羊」+ 临亥至辰顺布）", () => {
     const bad: string[] = [];
-    for (const c of CASES) {
+    for (const c of RING_CASES) {
       const { gan } = parseDay(c.day);
       const p = buildPlate(c.yj, c.shi);
       const zhou = zhouFromGuiren(gan, c.gui, p);
       expect(zhou, `${c.day}：贵人 ${c.gui} 在我方昼夜两表里都找不到——贵人起例对不上`).not.toBeNull();
       const t = buildTianjiang(gan, zhou!, p);
-      for (const [di, [tian, , jiang]] of Object.entries(c.ring)) {
+      for (const [di, [tian, , jiang]] of Object.entries(c.ring!)) {
         if (t.byTian[tian] !== jiang) {
           bad.push(`${c.day}${c.shi}时：${tian}（居${di}）对方=${jiang} 我方=${t.byTian[tian]}`);
         }
@@ -113,15 +120,39 @@ describe(`大六壬对拍（${CASES.length} 组独立实现）`, () => {
     expect(bad, `三传不一致 ${bad.length}/${CASES.length} 组：\n` + bad.slice(0, 6).join("\n")).toEqual([]);
   });
 
-  it("课体覆盖：对拍样本确实走到了多条宗门分支，不是只压中一条", () => {
+  it("宗门覆盖：九门全部被对拍走到，不许有分支从没被验证过", () => {
     const gates = new Set<string>();
+    const keti = new Set<string>();
     for (const c of CASES) {
       const { gan, zhi } = parseDay(c.day);
       const p = buildPlate(c.yj, c.shi);
-      gates.add(deriveSanchuan(buildSiKe(p, gan, zhi), p, c.day).gate);
+      const r = deriveSanchuan(buildSiKe(p, gan, zhi), p, c.day);
+      gates.add(r.gate);
+      keti.add(r.keti);
     }
-    expect([...gates].sort().join("、")).toBeTruthy();
-    expect(gates.size).toBeGreaterThanOrEqual(3);
+    // 九宗门一个都不能缺——缺了就说明那条分支至今没有任何外部实现核过
+    for (const g of ["贼克", "比用", "涉害", "遥克", "昴星", "别责", "八专", "伏吟", "返吟"]) {
+      expect(gates.has(g), `宗门「${g}」未被对拍覆盖`).toBe(true);
+    }
+    // 几个易错的细分课体也要确实走到
+    for (const k of ["涉害课·见机", "涉害课·察微", "昴星课·虎视转蓬", "昴星课·冬蛇掩目",
+      "别责课（芜淫）", "八专课（独足）", "返吟课·无依（井栏射）"]) {
+      expect([...keti].some((x) => x === k), `课体「${k}」未被对拍覆盖`).toBe(true);
+    }
+  });
+
+  it("经第二家独立实现复核的组，逐传一致（两家一致才算站得住）", () => {
+    const both = CASES.filter((c) => c.both);
+    expect(both.length, "应有经两家复核的样本").toBeGreaterThanOrEqual(3);
+    for (const c of both) {
+      const { gan, zhi } = parseDay(c.day);
+      const p = buildPlate(c.yj, c.shi);
+      const r = deriveSanchuan(buildSiKe(p, gan, zhi), p, c.day);
+      expect(
+        r.chuan.map((x) => `${x.dun ?? "〇"}${x.zhi}`),
+        `${c.day}${c.shi}时（${c.branch}）两家一致，我方须同`,
+      ).toEqual(c.chuan);
+    }
   });
 
   it("昼夜取法（卯申为界）与对方一致——分歧只出在壬癸贵人表那一条", () => {

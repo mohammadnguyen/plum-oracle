@@ -20,20 +20,32 @@ import {
 } from "./ganzhi.js";
 import type { Ke, PlatePair, SiKe } from "./plate.js";
 
-/** 每条宗门规则的把握程度，如实对外呈现，不含糊。 */
+/**
+ * 每条宗门规则的把握程度，如实对外呈现，不含糊。
+ *
+ * 评级口径（2026-10-28 两轮对拍后更新）：
+ *   confirmed —— 已与外部独立实现逐传比对通过，且无悬而未决的问题
+ *   likely    —— 取法已对上，但规则本身仍有未解的部分
+ *   disputed  —— 已知各家不同，必须并列提示（§3#6）
+ *
+ * 九门现已全部被对拍覆盖（见 tests/liuren-crosscheck.test.ts 的覆盖断言）。
+ */
 export const CONFIDENCE: Readonly<Record<string, "confirmed" | "likely" | "disputed">> =
   Object.freeze({
     贼克: "confirmed",
     元首: "confirmed",
     重审: "confirmed",
     比用: "confirmed",
-    涉害: "disputed",   // 深浅的数法与方向，各家不同
-    遥克: "likely",
-    昴星: "likely",
-    别责: "likely",
-    八专: "disputed",   // 八专日的认定范围各家不同（寄宫同位 vs 干支同五行）
-    伏吟: "likely",
-    返吟: "likely",
+    // 取法（临孟见机 / 临仲察微）经两家独立实现三组核过；但古法「涉害深者为用」
+    // 那一条始终无法验证，本软件未采——故不升 confirmed。见 SHEHAI_NOTE。
+    涉害: "likely",
+    遥克: "confirmed",
+    昴星: "confirmed",
+    别责: "confirmed",
+    // 发用数法已对上，但「哪些日子算八专」各家不同（寄宫同位 vs 兼取干支同五行）
+    八专: "disputed",
+    伏吟: "confirmed",
+    返吟: "confirmed",
   });
 
 /** 三刑。辰午酉亥为自刑。 */
@@ -91,31 +103,33 @@ function chainFrom(plate: PlatePair, chu: Zhi): [Zhi, Zhi, Zhi] {
 const biWithGan = (gan: Gan, z: string) => ganYang(gan) === (zhiIndex(z) % 2 === 0);
 
 /**
- * 涉害深浅。
+ * 涉害「深浅」——**本软件不用它决定发用，原因如下，务必读完再改。**
  *
- * ⚠ **本项为已知分歧点，标 disputed。** 通行说法是「天盘之神涉历地盘之家，受克多者为用」：
- * 把该上神从它所乘的地盘位，数回它自己的地盘本家，沿途经过的地盘各支中，
- * 克它的有几个，即为「涉害深浅」。深者（受克多者）发用。
- * 各家分歧在：数的方向（顺行还是逆行）、起讫是否含两端、以及只数克它的还是连生它的一并计。
- * 本软件采「自所乘位逆行回本家、不含起点含终点、只数克它者」，待对拍修正。
+ * 古法说「涉害深者为用」：天盘之神涉历地盘之家，受克多者发用。但「怎么数」各家不同——
+ * 方向（顺行还是逆行）、起讫是否含两端、只数克它的还是连生它的一并计，没有一个公认写法。
+ *
+ * 2026-10-28 与两家独立实现（dcbazi、国学居）对拍，三组涉害课的结论一致：
+ *   · 乙亥日未时月将卯：两家取未
+ *   · 庚辰日午时月将丑：两家取午
+ *   · 己卯日酉时月将丑：两家取未
+ * 这三组的答案，**都正好等于按「所乘地盘位的孟仲季」取出来的那一个**；
+ * 而本软件原先那版深浅（自所乘位逆行回本家、只数克它者）在后两组算出深浅不等，
+ * 抢在孟仲季之前发用，两组都错。换顺行再算，第一组对、第二组对、第三组仍错——
+ * 没有任何一种数法能同时解释三组。
+ *
+ * 结论：手上没有任何一个案例能证明「深浅」确实决定过发用，却有两个案例证明
+ * 我那版深浅会把发用带偏。已知错的规则比来历不明的规则更坏，故**移出决策路径**。
+ * 现行取法：比用不决 → 临孟（见机）→ 临仲（察微）→ 皆季则取课序在先者（复等）。
+ *
+ * 这不等于断定古法没有深浅，只等于：在拿到能判深浅的实例之前，本软件不猜。
+ * 若将来拿到深浅确实分出胜负的课例，应当在这里恢复，并补对拍。
  */
-export function sheHaiDepth(plate: PlatePair, shang: Zhi): number {
-  const seat = plate.diOf[shang]!;          // 该神所乘的地盘位
-  const home = shang;                        // 它自己的地盘本家
-  let depth = 0;
-  let i = zhiIndex(seat);
-  const end = zhiIndex(home);
-  for (let step = 0; step < 12; step++) {
-    i = ((i - 1) % 12 + 12) % 12;            // 逆行一位
-    const z = zhiAt(i);
-    if (zhiKeZhi(z, shang)) depth += 1;      // 途经之地克此神者计一
-    if (i === end) break;
-  }
-  return depth;
-}
+export const SHEHAI_DEPTH_IN_USE = false;
+export const SHEHAI_NOTE =
+  "涉害发用按「所乘地盘位的孟仲季」取（见机/察微/复等）。古法另有「涉害深者为用」一说，" +
+  "但各家数法不同，本软件未取——详见 LIUREN_STATUS.md。";
 
 import { ZHI_WUXING, ke as wuxingKe } from "./ganzhi.js";
-const zhiKeZhi = (a: string, b: string) => wuxingKe(ZHI_WUXING[a]!, ZHI_WUXING[b]!);
 
 /**
  * 多克取一：先比用，比用不决则涉害，涉害不决则孟仲季。
@@ -136,49 +150,27 @@ function pickAmong(
   if (bi.length > 1) steps.push(`与日干同性者有 ${bi.length} 个，比用不决，转涉害`);
   else steps.push(`无一与日干同性，比用不决，转涉害`);
 
-  // 二、涉害：受克深者发用
-  const depths = pool.map((k) => ({ k, d: sheHaiDepth(plate, k.shang) }));
-  const max = Math.max(...depths.map((x) => x.d));
-  const deepest = depths.filter((x) => x.d === max);
-  steps.push(
-    "涉害深浅：" + depths.map((x) => `${x.k.shang} 历地受克 ${x.d}`).join("、") +
-    `，最深 ${max}`,
-  );
-  if (deepest.length === 1) {
-    return {
-      picked: deepest[0]!.k, gate: "涉害", keti: "涉害课", steps,
-      dispute: "涉害深浅的数法（方向、起讫、是否兼计生者）各家不同，本软件采逆行回本家、只计克者。",
-    };
-  }
-
-  // 三、深浅相等：取**临孟**者（见机），无则取**临仲**者（察微）。
-  // 要点：孟仲季看的是该神**所乘的地盘位**，不是神本身——涉害论的就是「历地」，
-  // 立足之地才是关键。（2026-10-28 与现成排盘对拍时修正：原按神本身判，
-  // 乙亥日未时一课即与各家不合。）
+  // 二、涉害：按**所乘地盘位**的孟仲季取。
+  // 要点一：孟仲季看的是该神立足的地盘位，不是神本身——涉害论的就是「历地」。
+  // 要点二：不走「深浅」。理由见本文件 SHEHAI_NOTE 与 LIUREN_STATUS.md，
+  //         两家独立实现的三组涉害课都与此取法一致。
   const seatOf = (k: Ke) => plate.diOf[k.shang]!;
-  const meng = deepest.filter((x) => (SI_MENG as readonly string[]).includes(seatOf(x.k)));
+  steps.push("各克神所乘地盘位：" + pool.map((k) => `${k.shang}临${seatOf(k)}(${mengZhongJi(seatOf(k))})`).join("、"));
+
+  const meng = pool.filter((k) => (SI_MENG as readonly string[]).includes(seatOf(k)));
   if (meng.length) {
-    const k = meng[0]!.k;
-    steps.push(`深浅相等，取临四孟（${seatOf(k)}）的 ${k.shang} 发用（见机）`);
-    return {
-      picked: k, gate: "涉害", keti: "涉害课·见机", steps,
-      dispute: "涉害深浅相等时的取法（见机/察微/复等）各家不同。",
-    };
+    const k = meng[0]!;
+    steps.push(`取临四孟（${seatOf(k)}）的 ${k.shang} 发用（见机）`);
+    return { picked: k, gate: "涉害", keti: "涉害课·见机", steps, dispute: SHEHAI_NOTE };
   }
-  const zhong = deepest.filter((x) => (SI_ZHONG as readonly string[]).includes(seatOf(x.k)));
+  const zhong = pool.filter((k) => (SI_ZHONG as readonly string[]).includes(seatOf(k)));
   if (zhong.length) {
-    const k = zhong[0]!.k;
-    steps.push(`深浅相等且无临孟者，取临四仲（${seatOf(k)}）的 ${k.shang} 发用（察微）`);
-    return {
-      picked: k, gate: "涉害", keti: "涉害课·察微", steps,
-      dispute: "涉害深浅相等时的取法各家不同。",
-    };
+    const k = zhong[0]!;
+    steps.push(`无临孟者，取临四仲（${seatOf(k)}）的 ${k.shang} 发用（察微）`);
+    return { picked: k, gate: "涉害", keti: "涉害课·察微", steps, dispute: SHEHAI_NOTE };
   }
-  steps.push(`深浅相等且临孟临仲皆无，取课序在先的 ${deepest[0]!.k.shang} 发用`);
-  return {
-    picked: deepest[0]!.k, gate: "涉害", keti: "涉害课·复等", steps,
-    dispute: "涉害复等（临孟临仲皆无）时的取法各家不同，本软件取课序在先者。",
-  };
+  steps.push(`临孟临仲皆无，取课序在先的 ${pool[0]!.shang} 发用（复等）`);
+  return { picked: pool[0]!, gate: "涉害", keti: "涉害课·复等", steps, dispute: SHEHAI_NOTE };
 }
 
 /** 伏吟课：天地盘重叠。 */
@@ -207,12 +199,18 @@ function fuyinSanchuan(sike: SiKe, plate: PlatePair, dayGanZhi: string): Sanchua
     keti = yang ? "伏吟课·自任" : "伏吟课·自信";
   }
 
-  // 中传取初传之刑；若初传自刑，阳日改取支上神、阴日改取干上神；末传取中传之刑，
-  // 中传再自刑则取其冲。
+  // 中传取初传之刑；若初传自刑，改取干上神/支上神中**与初传不同**的那一个；
+  // 末传取中传之刑，中传再自刑则取其冲。
+  //
+  // 为什么不照搬「刚日取支上、柔日取干上」那句口诀：那句话默认初传来自无克一路
+  // （刚日初=干上、柔日初=支上），此时取另一个自然不重。但初传若由贼克法取出，
+  // 可能正好就是口诀要你取的那一个，照搬就会排出「初＝中」的废传。
+  // 2026-10-28 对拍实证：乙亥日丑时伏吟，初传辰（干上神）自刑，照搬口诀中传仍得辰；
+  // 各家实际取支上神亥，末取亥之冲巳。故改为「取另一个」。
   let zhong: Zhi;
   if (isZixing(chu)) {
-    zhong = ganYang(sike.gan) ? sike.zhiShang : sike.ganShang;
-    steps.push(`初传 ${chu} 自刑，中传改取${ganYang(sike.gan) ? "支" : "干"}上神 ${zhong}`);
+    zhong = chu === sike.ganShang ? sike.zhiShang : sike.ganShang;
+    steps.push(`初传 ${chu} 自刑，中传改取${chu === sike.ganShang ? "支" : "干"}上神 ${zhong}`);
   } else {
     zhong = XING[chu]!;
     steps.push(`中传取初传之刑：${chu} 刑 ${zhong}`);
