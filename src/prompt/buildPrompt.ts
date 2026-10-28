@@ -8,15 +8,17 @@
  * 分两段输出：
  *   · 第一段「盘面与规则」= 确定性事实（排盘、门类查表、净评推导、旺衰、应期推导、
  *     卦爻辞逐字、化解条目、类象白名单、所问之事）
- *   · 第二段「解读要求」= 契约（SYSTEM + 断事铁律 A–P + 口吻范例 + 自检清单）
+ *   · 第二段「解读要求」三选一：聊天版（默认）／详解版／完整契约
+ *     （SYSTEM + 断事铁律 A–P + 口吻范例 + 自检清单）
  */
 import contract from "../data/contract.json";
-import { declarations } from "../engine/lineage.js";
+import { declarations, QIANKUN_WU_HU_NOTE, SOUND_RULE_NOTE, COLOR_HUANG_NOTE } from "../engine/lineage.js";
 import type { CastResult } from "../engine/result.js";
 import type { DuanshiFull } from "../engine/rules/netassess.js";
 import { boardFacts } from "../engine/rules/netassess.js";
 import { getYaoci, type YaociInfo } from "../engine/corpus/guayaoci.js";
 import { PLAIN_REQUIREMENTS } from "./plainRequirements.js";
+import { CHAT_REQUIREMENTS } from "./chatRequirements.js";
 
 const C = contract as { DUANSHI_APPENDIX: string; KOUWEN_FEWSHOT: string; SELF_CHECKLIST: string };
 
@@ -201,14 +203,43 @@ export function duanshiFactLines(dl: Record<string, any>): string[] {
   return lines;
 }
 
+/**
+ * 本盘涉及的门派分歧（程序判定）。
+ *
+ * 为什么单列：解读要求只让 AI 在三种情形写门派分歧（乾坤取互、声音/报数取式、服色黄），
+ * 但盘面事实里**没有任何一行写明起卦法**——【门派声明】把所有分歧一律列出，与本盘无关；
+ * 应期路由只写「非time法」，指物、服色也是这三个字。聊天版第二轮试解里声音起卦的盘因此
+ * 漏写分歧，评审追到的根因正在这里。判定是确定性的，就该由程序做，不让 AI 猜。
+ *
+ * 不并入 `facts`：facts 与 Python 参考实现逐字对拍（112 组），这一节是新站新增的派生信息。
+ */
+export function disputeLines(r: CastResult): string[] {
+  const hits: string[] = [];
+  if (r.ben_gua === "乾为天" || r.ben_gua === "坤为地") hits.push(QIANKUN_WU_HU_NOTE);
+  if (r.method === "sound") hits.push(SOUND_RULE_NOTE);
+  if (r.method === "color" && [r.inputs.upper_color, r.inputs.lower_color].includes("黄")) {
+    hits.push(`服色起卦：${COLOR_HUANG_NOTE}`);
+  }
+  return [
+    "【本盘涉及的门派分歧（程序按起卦法与本卦判定；解读时并列呈现，不替问卦人裁决）】",
+    ...(hits.length ? hits.map((h) => `  · ${h}`) : ["  （本盘不涉及需要并列的门派分歧）"]),
+  ];
+}
+
 export interface ExportedPrompt {
   /** 第一段：盘面与规则（确定性事实）。**不可替代**——别处拿不到。 */
   facts: string;
+  /** 本盘涉及的门派分歧（程序判定，不在 facts 内，见 disputeLines） */
+  disputes: string;
   /** 完整解读契约（SYSTEM + 断事铁律 A–P + 自检清单，§0.1 要求逐字保留） */
   contract: string;
-  /** 精简解读要求（人话版，默认导出用，见 plainRequirements.ts 的理由） */
+  /** 聊天版解读要求（面对面说话的口吻，默认导出用，见 chatRequirements.ts） */
+  chat: string;
+  /** 盘面 + 聊天版要求（**界面默认复制的就是这个**） */
+  chatFull: string;
+  /** 详解版解读要求（每段标依据、逐句拆字，见 plainRequirements.ts） */
   plain: string;
-  /** 盘面 + 精简要求（**界面默认复制的就是这个**） */
+  /** 盘面 + 详解版要求 */
   plainFull: string;
   /** 盘面 + 完整契约（严格模式；盘面在前，契约在后） */
   full: string;
@@ -247,11 +278,16 @@ export function buildExportPrompt(
   // 用户粘过去，对方回「尚未提供已排好的盘」）。
   const head =
     "──────── 本卦盘面与规则（确定性排盘产出，请勿改动一个字）────────\n";
+  const disputes = disputeLines(r).join("\n");
+  const board = `${head}${facts}\n\n${disputes}`;
   return {
     facts,
+    disputes,
     contract: contractText,
+    chat: CHAT_REQUIREMENTS,
+    chatFull: `${board}\n\n${CHAT_REQUIREMENTS}`,
     plain: PLAIN_REQUIREMENTS,
-    plainFull: `${head}${facts}\n\n${PLAIN_REQUIREMENTS}`,
-    full: `${head}${facts}\n\n${contractText}`,
+    plainFull: `${board}\n\n${PLAIN_REQUIREMENTS}`,
+    full: `${board}\n\n${contractText}`,
   };
 }

@@ -49,7 +49,8 @@ interface State {
   /** 起卦所用时刻取数（默认此刻，可手改） */
   now: ReturnType<typeof nowTimeInputs>;
   timeEdited: boolean;
-  contractMode: "plain" | "full";
+  /** 导出的解读要求：聊天版（默认）／详解版（每段标依据）／完整契约 */
+  contractMode: "chat" | "plain" | "full";
   includeFewshot: boolean;
 }
 const state: State = {
@@ -58,7 +59,7 @@ const state: State = {
   men: null, menOverridden: false, menMatched: [], menFallback: true,
   question: "", posture: null,
   now: nowTimeInputs(), timeEdited: false,
-  contractMode: "plain", includeFewshot: false,
+  contractMode: "chat", includeFewshot: false,
 };
 
 const app = document.getElementById("app")!;
@@ -511,14 +512,15 @@ function chainCard(r: CastResult, f: DuanshiFull): HTMLElement {
   </div>`);
 }
 
-/** 可复制解读 Prompt。默认 = 盘面 + 精简要求（人话版）。 */
+/** 可复制解读 Prompt。默认 = 盘面 + 聊天版要求。 */
 function promptCard(r: CastResult, f: DuanshiFull): HTMLElement {
   const build = () => buildExportPrompt(r, f, {
     question: state.question.trim() || null,
     includeFewshot: state.includeFewshot,
   });
   let out = build();
-  const pick = () => (state.contractMode === "full" ? out.full : out.plainFull);
+  const pick = () =>
+    state.contractMode === "full" ? out.full : state.contractMode === "plain" ? out.plainFull : out.chatFull;
 
   const card = el(`
     <div class="card">
@@ -530,8 +532,10 @@ function promptCard(r: CastResult, f: DuanshiFull): HTMLElement {
         <button class="inline" id="b_facts">只复制盘面</button>
       </div>
       <details style="margin-top:8px">
-        <summary>高级：换成完整契约 / 附口吻范例（文本会长很多）</summary>
-        <label><input type="checkbox" id="f_mode" style="width:auto" /> 用<b>完整解读契约</b>（断事铁律 A–P + 自检清单，逐字原文；要求输出严格 JSON，更严格但更难读）</label>
+        <summary>解读风格：<span id="modename"></span></summary>
+        <label><input type="radio" name="f_mode" value="chat" style="width:auto" /> <b>聊天版</b>（默认）——像懂卦的朋友当面帮你分析：先结论，再讲怎么发展、哪里要小心、怎么做；少术语</label>
+        <label><input type="radio" name="f_mode" value="plain" style="width:auto" /> <b>详解版</b>——逐句拆原文，每段标出依据，适合想核对推理的人</label>
+        <label><input type="radio" name="f_mode" value="full" style="width:auto" /> <b>完整契约</b>（断事铁律 A–P + 自检清单，逐字原文；要求输出严格 JSON，最严但最难读）</label>
         <label><input type="checkbox" id="f_fs" style="width:auto" /> 附带口吻范例（仅在完整契约下有意义）</label>
       </details>
       <details style="margin-top:6px"><summary>预览（<span id="len"></span> 字）</summary><pre class="prompt" id="pv"></pre></details>
@@ -539,17 +543,24 @@ function promptCard(r: CastResult, f: DuanshiFull): HTMLElement {
 
   const pv = card.querySelector("#pv") as HTMLElement;
   const len = card.querySelector("#len") as HTMLElement;
+  const modename = card.querySelector("#modename") as HTMLElement;
+  const MODE_NAME = { chat: "聊天版", plain: "详解版", full: "完整契约" } as const;
   const paint = () => {
     const text = pick();
     pv.textContent = text;
     len.textContent = String(text.length);
+    modename.textContent = MODE_NAME[state.contractMode];
   };
   paint();
 
-  (card.querySelector("#f_mode") as HTMLInputElement).onchange = (e) => {
-    state.contractMode = (e.target as HTMLInputElement).checked ? "full" : "plain";
-    paint();
-  };
+  card.querySelectorAll<HTMLInputElement>('input[name="f_mode"]').forEach((radio) => {
+    radio.checked = radio.value === state.contractMode;
+    radio.onchange = () => {
+      if (!radio.checked) return;
+      state.contractMode = radio.value as State["contractMode"];
+      paint();
+    };
+  });
   (card.querySelector("#f_fs") as HTMLInputElement).onchange = (e) => {
     state.includeFewshot = (e.target as HTMLInputElement).checked;
     out = build();
