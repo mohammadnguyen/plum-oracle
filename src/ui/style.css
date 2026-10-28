@@ -140,3 +140,75 @@ footer.site a { color: var(--accent); }
 /* 门类改选：19 门平铺，手机上两三列 */
 .doorgrid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .doorgrid > button { flex: 0 1 auto; margin: 0; }
+
+/* ── 体系切换条（梅花 / 六壬）────────────────────────────────── */
+.syswitch { display: flex; gap: 8px; margin-bottom: 14px; }
+.syswitch > button { flex: 1 1 0; margin: 0; text-align: center; }
+
+/* ── 大六壬 · 天地盘方阵 ─────────────────────────────────────── */
+/* 地盘十二支固定：巳午未申 / 辰·酉 / 卯·戌 / 寅丑子亥，中央写日干支与月将 */
+.lrplate {
+  display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, auto);
+  gap: 4px; margin: 12px 0 6px;
+}
+.lrcell {
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px 2px;
+  text-align: center; line-height: 1.35; background: var(--paper);
+}
+.lrcell .jiang { display: block; font-size: 11.5px; color: var(--ink2); }
+.lrcell .tian { display: block; font-size: 17px; color: var(--ink); }
+.lrcell .di { display: block; font-size: 11px; color: var(--ink2); opacity: .7; }
+.lrcell .cmark {
+  display: inline-block; font-size: 10.5px; color: var(--accent);
+  border: 1px solid var(--accent); border-radius: 3px; padding: 0 3px; margin-top: 2px;
+}
+.lrcell.kong .tian { color: var(--ink2); text-decoration: line-through; opacity: .65; }
+.lrcell.chuan { border-color: var(--accent); }
+.lrcenter {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; padding: 6px; text-align: center;
+}
+.lrcenter .c1 { font-size: 16px; color: var(--ink); letter-spacing: 1px; }
+.lrcenter .c2 { font-size: 12px; color: var(--ink2); }
+.lrcenter .c3 { font-size: 11.5px; color: var(--xiong); }
+
+/* ── 四课 ───────────────────────────────────────────────────── */
+.sike { display: flex; gap: 6px; margin-top: 10px; }
+.sike-ke {
+  flex: 1 1 0; border: 1px solid var(--line); border-radius: 8px;
+  padding: 7px 2px; text-align: center; background: var(--paper);
+}
+.sike-ke .kn { font-size: 11px; color: var(--ink2); }
+.sike-ke .kj { font-size: 11.5px; color: var(--ink2); }
+.sike-ke .ks { font-size: 17px; color: var(--ink); }
+.sike-ke .kx { font-size: 14px; color: var(--ink2); }
+.sike-ke .kr { font-size: 10.5px; color: var(--xiong); margin-top: 2px; }
+.sike-ke .kr.none { color: var(--ink2); opacity: .55; }
+
+/* ── 三传 ───────────────────────────────────────────────────── */
+.chuan { margin-top: 10px; }
+.chuan-row {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  padding: 7px 2px; border-top: 1px solid var(--line);
+}
+.chuan-row .cp { font-size: 12px; color: var(--ink2); min-width: 36px; }
+.chuan-row .cz { font-size: 17px; color: var(--ink); min-width: 48px; }
+.chuan-row .cj { font-size: 13px; color: var(--ink2); }
+.chuan-row .cr { font-size: 12.5px; color: var(--ink2); }
+.chuan-row .ck {
+  font-size: 11px; color: var(--xiong);
+  border: 1px solid var(--xiong); border-radius: 3px; padding: 0 4px;
+}
+.chuan-row.kong .cz { text-decoration: line-through; opacity: .7; }
+
+/* ── 把握程度徽标 ───────────────────────────────────────────── */
+.conf {
+  text-align: center; font-size: 12px; margin-top: 8px;
+  border: 1px dashed var(--line); border-radius: var(--radius); padding: 6px;
+  color: var(--ink2);
+}
+.conf.confirmed { border-color: var(--ji); color: var(--ji); }
+.conf.likely { border-color: var(--ink2); }
+.conf.disputed { border-color: var(--xiong); color: var(--xiong); }
+
+.btnrow { margin-top: 10px; }

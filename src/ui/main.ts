@@ -1,7 +1,12 @@
 /**
  * 界面（纯静态，无后端、无 LLM 调用）。
  *
- * 三步：起卦法 → 输入（只问**非你不可**的东西）→ 结果。
+ * 站上有两套体系：**梅花易数**与**大六壬**，第 0 屏先选。
+ * 两套共用同一个外壳（ui/shared.ts）与同一条导出规矩（盘面在前、要求在后），
+ * 但各有各的引擎与解读要求——六壬的盘面结构与梅花完全不同（四课三传天将
+ * vs 体用生克旺衰），那份人话版要求不能复用，见 prompt/liurenRequirements.ts。
+ *
+ * 梅花这一套三步：起卦法 → 输入（只问**非你不可**的东西）→ 结果。
  *   · 时辰、农历日期一律取设备时钟（§3#1/#2/#4/#5，见 engine/now.ts），不问用户；
  *     要补旧卦的，「改时刻」里可手填。
  *   · 所问门类由问句**确定性关键词规则**自动判（engine/rules/menDetect.ts），
@@ -18,11 +23,18 @@ import { nowTimeInputs } from "../engine/now.js";
 import { buildExportPrompt } from "../prompt/buildPrompt.js";
 import { corpusInfo } from "../engine/corpus/guayaoci.js";
 import { plainRead } from "./plainRead.js";
+import { el, esc, copyText, siteHeader, siteFooter } from "./shared.js";
+import { initLiurenState, renderLiuren, type LiurenState } from "./liuren.js";
 
 // ── 状态 ────────────────────────────────────────────────────────────────
 type MethodUi = "time" | "number" | "object_direction" | "color";
 
+type System = "meihua" | "liuren";
+
 interface State {
+  /** null = 还没选体系，停在第 0 屏 */
+  system: System | null;
+  liuren: LiurenState;
   screen: 1 | 2 | 3;
   method: CastMethod | null;
   methodUi: MethodUi | null;
@@ -41,6 +53,7 @@ interface State {
   includeFewshot: boolean;
 }
 const state: State = {
+  system: null, liuren: initLiurenState(),
   screen: 1, method: null, methodUi: null, inputs: {},
   men: null, menOverridden: false, menMatched: [], menFallback: true,
   question: "", posture: null,
@@ -49,26 +62,6 @@ const state: State = {
 };
 
 const app = document.getElementById("app")!;
-const esc = (s: unknown): string =>
-  String(s ?? "").replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
-
-function el(html: string): HTMLElement {
-  const d = document.createElement("div");
-  d.innerHTML = html.trim();
-  return d.firstElementChild as HTMLElement;
-}
-
-function toast(msg: string): void {
-  let t = document.querySelector(".toast") as HTMLElement | null;
-  if (!t) {
-    t = el('<div class="toast"></div>');
-    document.body.appendChild(t);
-  }
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t!.classList.remove("show"), 1600);
-}
 
 /** 按问句重判门类；用户手动改过之后不再覆盖。 */
 function syncMen(): void {
@@ -80,24 +73,65 @@ function syncMen(): void {
 }
 
 // ── 渲染 ────────────────────────────────────────────────────────────────
+const SUB: Record<System, string> = {
+  meihua: "梅花易数 · 透明排盘 · 每步可查 · 本站不调用任何 AI",
+  liuren: "大六壬 · 透明起课 · 每步可查 · 本站不调用任何 AI",
+};
+
 function render(): void {
   app.innerHTML = "";
-  app.appendChild(el(`
-    <header class="site">
-      <h1>梅花易数</h1>
-      <div class="sub">透明排盘 · 每步可查 · 本站不调用任何 AI</div>
-      <div class="badge">象数 · 非占验</div>
-    </header>`));
+  app.appendChild(siteHeader(
+    state.system ? SUB[state.system] : "梅花易数 · 大六壬 · 本站不调用任何 AI",
+    "象数 · 非占验",
+  ));
 
-  ({ 1: s1, 2: s2, 3: s3 })[state.screen]();
+  if (!state.system) {
+    s0();
+  } else if (state.system === "liuren") {
+    app.appendChild(switchBar());
+    renderLiuren(app, state.liuren, render);
+  } else {
+    app.appendChild(switchBar());
+    ({ 1: s1, 2: s2, 3: s3 })[state.screen]();
+  }
 
-  app.appendChild(el(`
-    <footer class="site">
-      本站呈现传统象数体系的内部透明推演，不作、不暗示任何科学预测效力。<br />
-      解读由你自己的 AI 工具完成；本站只负责把盘排准、把依据摆全。<br />
-      © 2026 本站作者 · 版权所有。禁止复制、转载、改作或搭建镜像；<br />
-      禁止将本站内容用于训练 AI 模型或构建数据集。
-    </footer>`));
+  app.appendChild(siteFooter());
+}
+
+/** 顶部体系切换条：随时换一套，不用退到首屏。 */
+function switchBar(): HTMLElement {
+  const bar = el(`<div class="syswitch"></div>`);
+  for (const [sys, name] of [["meihua", "梅花易数"], ["liuren", "大六壬"]] as Array<[System, string]>) {
+    const b = el(`<button class="inline${state.system === sys ? " primary" : ""}">${esc(name)}</button>`);
+    b.onclick = () => {
+      if (state.system === sys) return;
+      state.system = sys;
+      render();
+    };
+    bar.appendChild(b);
+  }
+  return bar;
+}
+
+// 屏0：选体系
+function s0(): void {
+  app.appendChild(el(`<div class="step">先选一套体系</div>`));
+  const c = el(`<div class="card"></div>`);
+  const OPTS: Array<[System, string, string]> = [
+    ["meihua", "梅花易数",
+      "宋·邵雍一脉。起卦取数 → 本卦互卦变卦 → 体用生克旺衰 → 吉凶六档与应期。" +
+      "规则与黄金案例全部可溯源到《梅花易数》原书行号。"],
+    ["liuren", "大六壬",
+      "三式之一。月将加占时 → 天地盘 → 四课 → 三传九宗门 → 十二天将。" +
+      "本站无六壬源本，方法保真靠与两家独立排盘实现逐传对拍，把握程度逐条如实标注。"],
+  ];
+  for (const [sys, name, hint] of OPTS) {
+    const b = el(`<button>${esc(name)}<span class="hint">${esc(hint)}</span></button>`);
+    b.onclick = () => { state.system = sys; render(); };
+    c.appendChild(b);
+  }
+  app.appendChild(c);
+  app.appendChild(el(`<p class="note">两套都只排盘、不解读。解读由你自己的 AI 据导出文本完成。</p>`));
 }
 
 function backBtn(to: State["screen"]): HTMLElement {
@@ -522,22 +556,8 @@ function promptCard(r: CastResult, f: DuanshiFull): HTMLElement {
     paint();
   };
 
-  const copy = async (text: string, what: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast(`已复制${what}（${text.length} 字）`);
-    } catch {
-      // 剪贴板不可用（权限/非安全上下文）时退回选中，由用户手动复制
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      toast("复制受限，已选中文本，请手动复制");
-      setTimeout(() => ta.remove(), 8000);
-    }
-  };
-  (card.querySelector("#b_all") as HTMLElement).onclick = () => copy(pick(), "全文");
-  (card.querySelector("#b_facts") as HTMLElement).onclick = () => copy(out.facts, "盘面");
+  (card.querySelector("#b_all") as HTMLElement).onclick = () => void copyText(pick(), "全文");
+  (card.querySelector("#b_facts") as HTMLElement).onclick = () => void copyText(out.facts, "盘面");
   return card;
 }
 
