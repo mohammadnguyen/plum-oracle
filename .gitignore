@@ -2,3 +2,9 @@ node_modules/
 dist/
 *.local
 .DS_Store
+
+# 本地扫描/调试产物
+_scan.txt
+_liuren_smoke.txt
+_facts.txt
+_plain.txt
