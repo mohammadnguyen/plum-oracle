@@ -125,7 +125,8 @@ export function divineLiuren(input: LiurenInput): LiurenResult {
   if (tj.disputeNote) disputes.push(tj.disputeNote);
   disputes.push(
     `昼夜之分：本软件以「${ZHOU_YE_RULE}」为界（本盘为${zhou ? "昼" : "夜"}占）；` +
-    "另一说以实际日出日入为界，随节令与纬度浮动。此项只影响贵人昼夜，不影响天地盘与三传。",
+    "另一说以实际日出日入为界，随节令与纬度浮动。此项决定取昼贵还是夜贵：按另一说若本盘昼夜归属不同，" +
+    "贵人随之换位，十二天将整体跟着变；天地盘与三传不变。",
   );
 
   const confidence = ([sanchuan.confidence] as const).reduce(

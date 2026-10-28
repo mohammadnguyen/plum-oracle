@@ -18,10 +18,12 @@ export interface LiurenState {
   /** 手选的占时；null = 跟设备时钟 */
   zhanshi: Zhi | null;
   at: Date;
+  /** 导出的解读要求：聊天版（默认）／详解版（每段标依据） */
+  style: "chat" | "plain";
 }
 
 export function initLiurenState(): LiurenState {
-  return { screen: 1, question: "", zhanshi: null, at: new Date() };
+  return { screen: 1, question: "", zhanshi: null, at: new Date(), style: "chat" };
 }
 
 /** 天将简称，盘面格子里用一个字更好认。 */
@@ -186,7 +188,7 @@ function screenResult(app: HTMLElement, st: LiurenState, rerender: () => void): 
   app.appendChild(sc);
 
   app.appendChild(chainCard(r));
-  app.appendChild(promptCard(r));
+  app.appendChild(promptCard(r, st));
 }
 
 function chainCard(r: LiurenResult): HTMLElement {
@@ -229,15 +231,39 @@ function chainCard(r: LiurenResult): HTMLElement {
   </div>`);
 }
 
-function promptCard(r: LiurenResult): HTMLElement {
+function promptCard(r: LiurenResult, st: LiurenState): HTMLElement {
   const out = buildLiurenPrompt(r);
-  return promptCardBase({
+  const pick = () => (st.style === "plain" ? out.full : out.chatFull);
+  const MODE_NAME = { chat: "聊天版", plain: "详解版" } as const;
+  const extra = el(`
+    <details style="margin-top:8px">
+      <summary>解读风格：<span class="modename"></span></summary>
+      <label><input type="radio" name="lr_mode" value="chat" style="width:auto" /> <b>聊天版</b>（默认）——像懂六壬的朋友当面帮你分析：先说走向，再讲怎么发展、哪里要小心、怎么做；少术语</label>
+      <label><input type="radio" name="lr_mode" value="plain" style="width:auto" /> <b>详解版</b>——逐步讲起课来由，每段标出依据，适合想核对推理的人</label>
+    </details>`);
+  const card = promptCardBase({
     title: "把这段复制给你的 AI，让它解这一课",
     note: "本站不调用任何 AI。文本由确定性排盘产出：<b>先盘面，后要求</b>——" +
       "盘面是别处拿不到的部分，万一被截断，先保住它。",
-    buttons: [["复制（盘面 + 解读要求）", () => out.full], ["只复制盘面", () => out.facts]],
-    preview: () => out.full,
+    buttons: [["复制（盘面 + 解读要求）", pick], ["只复制盘面", () => out.facts]],
+    preview: pick,
+    extra,
   });
+  const modename = extra.querySelector(".modename") as HTMLElement;
+  const sync = () => {
+    modename.textContent = MODE_NAME[st.style];
+    (card as any).__repaint();
+  };
+  extra.querySelectorAll<HTMLInputElement>('input[name="lr_mode"]').forEach((radio) => {
+    radio.checked = radio.value === st.style;
+    radio.onchange = () => {
+      if (!radio.checked) return;
+      st.style = radio.value as LiurenState["style"];
+      sync();
+    };
+  });
+  sync();
+  return card;
 }
 
 /** 由 main 调用：把六壬这一套渲染进 #app。 */

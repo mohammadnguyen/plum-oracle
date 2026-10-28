@@ -11,6 +11,7 @@ import { CONFIDENCE } from "../engine/liuren/sanchuan.js";
 import { JIANG_NAME } from "../engine/liuren/yuejiang.js";
 import { sikeLabels, type LiurenResult } from "../engine/liuren/result.js";
 import { LIUREN_REQUIREMENTS } from "./liurenRequirements.js";
+import { LIUREN_CHAT_REQUIREMENTS } from "./liurenChatRequirements.js";
 import { CALENDAR_LIB } from "../engine/lineage.js";
 
 const CONF_CN: Readonly<Record<string, string>> = Object.freeze({
@@ -67,8 +68,13 @@ export function liurenFactLines(r: LiurenResult): string[] {
 
 export interface LiurenExport {
   facts: string;
+  /** 聊天版要求（默认，见 liurenChatRequirements.ts） */
+  chat: string;
+  /** 盘面 + 聊天版要求，界面默认复制这个 */
+  chatFull: string;
+  /** 详解版要求（每段标依据，见 liurenRequirements.ts） */
   requirements: string;
-  /** 盘面 + 要求，界面默认复制这个 */
+  /** 盘面 + 详解版要求 */
   full: string;
 }
 
@@ -77,6 +83,8 @@ export function buildLiurenPrompt(r: LiurenResult): LiurenExport {
   const facts = liurenFactLines(r).join("\n");
   return {
     facts,
+    chat: LIUREN_CHAT_REQUIREMENTS,
+    chatFull: `${head}${facts}\n\n${LIUREN_CHAT_REQUIREMENTS}`,
     requirements: LIUREN_REQUIREMENTS,
     full: `${head}${facts}\n\n${LIUREN_REQUIREMENTS}`,
   };
