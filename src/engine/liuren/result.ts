@@ -122,6 +122,7 @@ export function divineLiuren(input: LiurenInput): LiurenResult {
 
   const disputes: string[] = [];
   if (sanchuan.disputeNote) disputes.push(sanchuan.disputeNote);
+  disputes.push(...sanchuan.altNotes);
   if (tj.disputeNote) disputes.push(tj.disputeNote);
   disputes.push(
     `昼夜之分：本软件以「${ZHOU_YE_RULE}」为界（本盘为${zhou ? "昼" : "夜"}占）；` +
