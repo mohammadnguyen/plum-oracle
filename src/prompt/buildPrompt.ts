@@ -19,6 +19,7 @@ import { boardFacts } from "../engine/rules/netassess.js";
 import { getYaoci, type YaociInfo } from "../engine/corpus/guayaoci.js";
 import { PLAIN_REQUIREMENTS } from "./plainRequirements.js";
 import { CHAT_REQUIREMENTS } from "./chatRequirements.js";
+import { backgroundLines, FOLLOWUP_MEIHUA } from "./conversation.js";
 
 const C = contract as { DUANSHI_APPENDIX: string; KOUWEN_FEWSHOT: string; SELF_CHECKLIST: string };
 
@@ -231,6 +232,12 @@ export interface ExportedPrompt {
   facts: string;
   /** 本盘涉及的门派分歧（程序判定，不在 facts 内，见 disputeLines） */
   disputes: string;
+  /** 问卦人自述的背景节（没写背景为空串；不在 facts 内，见 conversation.ts） */
+  background: string;
+  /** 盘面全部：facts + 门派分歧 + 背景。「只复制盘面」复制的是这个 */
+  board: string;
+  /** 追问规矩，附在每种导出的最后（见 conversation.ts） */
+  followup: string;
   /** 完整解读契约（SYSTEM + 断事铁律 A–P + 自检清单，§0.1 要求逐字保留） */
   contract: string;
   /** 聊天版解读要求（面对面说话的口吻，默认导出用，见 chatRequirements.ts） */
@@ -250,6 +257,8 @@ export interface ExportOptions {
   includeFewshot?: boolean;
   /** 问卦人原话 */
   question?: string | null;
+  /** 问卦人自述的背景（选填；只作情境，见 conversation.ts） */
+  background?: string | null;
 }
 
 /** 装配可复制的解读 Prompt。**不调用任何 LLM，纯文本渲染。** */
@@ -279,15 +288,21 @@ export function buildExportPrompt(
   const head =
     "──────── 本卦盘面与规则（确定性排盘产出，请勿改动一个字）────────\n";
   const disputes = disputeLines(r).join("\n");
-  const board = `${head}${facts}\n\n${disputes}`;
+  const background = backgroundLines(opts.background, "问卦人").join("\n");
+  const board = `${head}${facts}\n\n${disputes}` + (background ? `\n\n${background}` : "");
+  // 追问规矩放最后：截断时先丢它，代价最小
+  const tail = `\n\n${FOLLOWUP_MEIHUA}`;
   return {
     facts,
     disputes,
+    background,
+    board,
+    followup: FOLLOWUP_MEIHUA,
     contract: contractText,
     chat: CHAT_REQUIREMENTS,
-    chatFull: `${board}\n\n${CHAT_REQUIREMENTS}`,
+    chatFull: `${board}\n\n${CHAT_REQUIREMENTS}${tail}`,
     plain: PLAIN_REQUIREMENTS,
-    plainFull: `${board}\n\n${PLAIN_REQUIREMENTS}`,
-    full: `${board}\n\n${contractText}`,
+    plainFull: `${board}\n\n${PLAIN_REQUIREMENTS}${tail}`,
+    full: `${board}\n\n${contractText}${tail}`,
   };
 }

@@ -59,6 +59,29 @@ export function siteFooter(): HTMLElement {
     </footer>`);
 }
 
+/**
+ * 「补充你的情况」选填框：两套体系共用。写了就作为【问卦人自述的背景】附在盘面之后，
+ * 只作情境，不参与排盘（用法说明随导出文本一起给 AI，见 prompt/conversation.ts）。
+ * 默认收起：大多数人只想问一句就走，不该因此多一道门槛。
+ */
+export function backgroundCard(value: string, max: number, onInput: (v: string) => void, xiang = "卦象"): HTMLElement {
+  const card = el(`
+    <div class="card">
+      <details${value.trim() ? " open" : ""}>
+        <summary>补充你的情况（选填）——写几句现状，解读会更贴近你的事</summary>
+        <textarea maxlength="${max}" placeholder="例：已经谈过两轮，对方压价压得很厉害；我这边最晚月底要定。">${esc(value)}</textarea>
+        <div class="note" style="text-align:right"><span class="bgn">0</span>/${max}</div>
+        <p class="note">只用来让 AI 把${xiang}落到你的具体处境里；结论仍只从盘面来，不会因为你写了什么而变好或变坏。
+          本站不保存、不上传，它只出现在你复制走的文本里。</p>
+      </details>
+    </div>`);
+  const ta = card.querySelector("textarea") as HTMLTextAreaElement;
+  const n = card.querySelector(".bgn") as HTMLElement;
+  n.textContent = String(value.length);
+  ta.oninput = () => { n.textContent = String(ta.value.length); onInput(ta.value); };
+  return card;
+}
+
 /** 可复制文本卡：两套体系共用。 */
 export function promptCardBase(opts: {
   title: string;

@@ -23,7 +23,8 @@ import { nowTimeInputs } from "../engine/now.js";
 import { buildExportPrompt } from "../prompt/buildPrompt.js";
 import { corpusInfo } from "../engine/corpus/guayaoci.js";
 import { plainRead } from "./plainRead.js";
-import { el, esc, copyText, siteHeader, siteFooter } from "./shared.js";
+import { backgroundCard, el, esc, copyText, siteHeader, siteFooter } from "./shared.js";
+import { BACKGROUND_MAX } from "../prompt/conversation.js";
 import { initLiurenState, renderLiuren, type LiurenState } from "./liuren.js";
 
 // ── 状态 ────────────────────────────────────────────────────────────────
@@ -45,6 +46,8 @@ interface State {
   menMatched: string[];
   menFallback: boolean;
   question: string;
+  /** 问卦人自述的背景（选填，只进导出文本） */
+  background: string;
   posture: string | null;
   /** 起卦所用时刻取数（默认此刻，可手改） */
   now: ReturnType<typeof nowTimeInputs>;
@@ -57,7 +60,7 @@ const state: State = {
   system: null, liuren: initLiurenState(),
   screen: 1, method: null, methodUi: null, inputs: {},
   men: null, menOverridden: false, menMatched: [], menFallback: true,
-  question: "", posture: null,
+  question: "", background: "", posture: null,
   now: nowTimeInputs(), timeEdited: false,
   contractMode: "chat", includeFewshot: false,
 };
@@ -243,6 +246,7 @@ function s2(): void {
     qn.textContent = String(ta.value.length);
     paintMen();
   };
+  app.appendChild(backgroundCard(state.background, BACKGROUND_MAX, (v) => { state.background = v; }));
 
   // 起卦必需输入（只有确实非用户不可的那些）
   let inputCard: HTMLElement | null = null;
@@ -343,6 +347,9 @@ function s3(): void {
 
   if (state.question.trim()) {
     app.appendChild(el(`<div class="card">✍️ 所问：${esc(state.question.trim())}</div>`));
+  }
+  if (state.background.trim()) {
+    app.appendChild(el(`<div class="card note">📝 你补充的情况已附在下方复制文本里（只作情境，不影响盘面）。</div>`));
   }
 
   app.appendChild(menCard());
@@ -516,6 +523,7 @@ function chainCard(r: CastResult, f: DuanshiFull): HTMLElement {
 function promptCard(r: CastResult, f: DuanshiFull): HTMLElement {
   const build = () => buildExportPrompt(r, f, {
     question: state.question.trim() || null,
+    background: state.background.trim() || null,
     includeFewshot: state.includeFewshot,
   });
   let out = build();
@@ -568,7 +576,7 @@ function promptCard(r: CastResult, f: DuanshiFull): HTMLElement {
   };
 
   (card.querySelector("#b_all") as HTMLElement).onclick = () => void copyText(pick(), "全文");
-  (card.querySelector("#b_facts") as HTMLElement).onclick = () => void copyText(out.facts, "盘面");
+  (card.querySelector("#b_facts") as HTMLElement).onclick = () => void copyText(out.board, "盘面");
   return card;
 }
 

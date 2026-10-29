@@ -14,6 +14,7 @@ import { LIUREN_REQUIREMENTS } from "./liurenRequirements.js";
 import { LIUREN_CHAT_REQUIREMENTS } from "./liurenChatRequirements.js";
 import { CALENDAR_LIB } from "../engine/lineage.js";
 import { leixiangOf, TIANJIANG_SOURCE } from "../engine/liuren/tianjiangLeixiang.js";
+import { backgroundLines, FOLLOWUP_LIUREN } from "./conversation.js";
 
 const CONF_CN: Readonly<Record<string, string>> = Object.freeze({
   confirmed: "已与两家独立排盘实现逐传核过",
@@ -87,6 +88,12 @@ export function liurenFactLines(r: LiurenResult): string[] {
 
 export interface LiurenExport {
   facts: string;
+  /** 问课人自述的背景节（没写为空串；见 conversation.ts） */
+  background: string;
+  /** 盘面全部：facts + 背景。「只复制盘面」复制的是这个 */
+  board: string;
+  /** 追问规矩，附在每种导出的最后 */
+  followup: string;
   /** 聊天版要求（默认，见 liurenChatRequirements.ts） */
   chat: string;
   /** 盘面 + 聊天版要求，界面默认复制这个 */
@@ -97,15 +104,21 @@ export interface LiurenExport {
   full: string;
 }
 
-export function buildLiurenPrompt(r: LiurenResult): LiurenExport {
+export function buildLiurenPrompt(r: LiurenResult, opts: { background?: string | null } = {}): LiurenExport {
   const head = "──────── 本课盘面（确定性排盘产出，请勿改动一个字）────────\n";
   const facts = liurenFactLines(r).join("\n");
+  const background = backgroundLines(opts.background, "问课人").join("\n");
+  const board = `${head}${facts}` + (background ? `\n\n${background}` : "");
+  const tail = `\n\n${FOLLOWUP_LIUREN}`;
   return {
     facts,
+    background,
+    board,
+    followup: FOLLOWUP_LIUREN,
     chat: LIUREN_CHAT_REQUIREMENTS,
-    chatFull: `${head}${facts}\n\n${LIUREN_CHAT_REQUIREMENTS}`,
+    chatFull: `${board}\n\n${LIUREN_CHAT_REQUIREMENTS}${tail}`,
     requirements: LIUREN_REQUIREMENTS,
-    full: `${head}${facts}\n\n${LIUREN_REQUIREMENTS}`,
+    full: `${board}\n\n${LIUREN_REQUIREMENTS}${tail}`,
   };
 }
 

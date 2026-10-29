@@ -11,11 +11,14 @@ import { TIANJIANG } from "../engine/liuren/tianjiang.js";
 import { buildLiurenPrompt } from "../prompt/buildLiurenPrompt.js";
 import { leixiangOf, TIANJIANG_SOURCE } from "../engine/liuren/tianjiangLeixiang.js";
 import { CALENDAR_LIB } from "../engine/lineage.js";
-import { el, esc, promptCardBase } from "./shared.js";
+import { backgroundCard, el, esc, promptCardBase } from "./shared.js";
+import { BACKGROUND_MAX } from "../prompt/conversation.js";
 
 export interface LiurenState {
   screen: 1 | 2;
   question: string;
+  /** 问课人自述的背景（选填，只进导出文本） */
+  background: string;
   /** 手选的占时；null = 跟设备时钟 */
   zhanshi: Zhi | null;
   at: Date;
@@ -24,7 +27,7 @@ export interface LiurenState {
 }
 
 export function initLiurenState(): LiurenState {
-  return { screen: 1, question: "", zhanshi: null, at: new Date(), style: "chat" };
+  return { screen: 1, question: "", background: "", zhanshi: null, at: new Date(), style: "chat" };
 }
 
 /** 天将简称，盘面格子里用一个字更好认。 */
@@ -119,6 +122,7 @@ function screenQuestion(app: HTMLElement, st: LiurenState, rerender: () => void)
   const qn = qc.querySelector("#lr_qn") as HTMLElement;
   qn.textContent = String(st.question.length);
   ta.oninput = () => { st.question = ta.value; qn.textContent = String(ta.value.length); };
+  app.appendChild(backgroundCard(st.background, BACKGROUND_MAX, (v) => { st.background = v; }, "课象"));
 
   const tc = el(`
     <div class="card">
@@ -180,6 +184,9 @@ function screenResult(app: HTMLElement, st: LiurenState, rerender: () => void): 
 
   if (r.question) {
     app.appendChild(el(`<div class="card">✍️ 所问：${esc(r.question)}</div>`));
+  }
+  if (st.background.trim()) {
+    app.appendChild(el(`<div class="card note">📝 你补充的情况已附在下方复制文本里（只作情境，不影响课盘）。</div>`));
   }
 
   const sc = el(`<div class="card"><div class="guaname" style="text-align:left;font-size:15px;color:var(--ink)">四课三传</div></div>`);
@@ -245,7 +252,7 @@ function chainCard(r: LiurenResult): HTMLElement {
 }
 
 function promptCard(r: LiurenResult, st: LiurenState): HTMLElement {
-  const out = buildLiurenPrompt(r);
+  const out = buildLiurenPrompt(r, { background: st.background.trim() || null });
   const pick = () => (st.style === "plain" ? out.full : out.chatFull);
   const MODE_NAME = { chat: "聊天版", plain: "详解版" } as const;
   const extra = el(`
@@ -258,7 +265,7 @@ function promptCard(r: LiurenResult, st: LiurenState): HTMLElement {
     title: "把这段复制给你的 AI，让它解这一课",
     note: "本站不调用任何 AI。文本由确定性排盘产出：<b>先盘面，后要求</b>——" +
       "盘面是别处拿不到的部分，万一被截断，先保住它。",
-    buttons: [["复制（盘面 + 解读要求）", pick], ["只复制盘面", () => out.facts]],
+    buttons: [["复制（盘面 + 解读要求）", pick], ["只复制盘面", () => out.board]],
     preview: pick,
     extra,
   });
