@@ -14,6 +14,9 @@ import { CALENDAR_LIB } from "../engine/lineage.js";
 import { backgroundCard, el, esc, promptCardBase } from "./shared.js";
 import { castShowLiuren, ritual } from "./ritual.js";
 import { SEASON_NAME, statesLine } from "../engine/liuren/wangxiang.js";
+import { detectLeishen, LEISHEN, targetName } from "../engine/liuren/leishen.js";
+import { birthLunarYear, yearZhi, type NianmingInput } from "../engine/liuren/nianming.js";
+import type { LiurenInput } from "../engine/liuren/result.js";
 import { BACKGROUND_MAX } from "../prompt/conversation.js";
 
 export interface LiurenState {
@@ -26,10 +29,34 @@ export interface LiurenState {
   at: Date;
   /** 导出的解读要求：聊天版（默认）／详解版（每段标依据） */
   style: "chat" | "plain";
+  /** 类神：auto = 按问句自动归类；null = 不取；否则为类别 id */
+  leishen: string | null;
+  /** 年命（选填）：出生公历年、生肖、性别；出生年空着即不取 */
+  nm: { year: string; benming: Zhi | ""; gender: "男" | "女" };
+}
+
+/** 年命输入有效才返回；无效或没填返回 null。 */
+function nmInput(st: LiurenState): NianmingInput | null {
+  const y = Number(st.nm.year);
+  if (!st.nm.year.trim() || !Number.isInteger(y) || y < 1880 || y > new Date().getFullYear()) return null;
+  const benming = (st.nm.benming || yearZhi(y)) as Zhi;
+  try { birthLunarYear(y, benming); } catch { return null; }
+  return { birthYear: y, benming, gender: st.nm.gender };
+}
+
+function inputOf(st: LiurenState): LiurenInput {
+  return {
+    at: st.at, zhanshi: st.zhanshi ?? undefined, question: st.question,
+    leishen: st.leishen === "auto" ? undefined : st.leishen,
+    nianming: nmInput(st),
+  };
 }
 
 export function initLiurenState(): LiurenState {
-  return { screen: 1, question: "", background: "", zhanshi: null, at: new Date(), style: "chat" };
+  return {
+    screen: 1, question: "", background: "", zhanshi: null, at: new Date(), style: "chat",
+    leishen: "auto", nm: { year: "", benming: "", gender: "男" },
+  };
 }
 
 /** 天将简称，盘面格子里用一个字更好认。 */
@@ -126,7 +153,65 @@ function screenQuestion(app: HTMLElement, st: LiurenState, rerender: () => void)
   const ta = qc.querySelector("#lr_q") as HTMLTextAreaElement;
   const qn = qc.querySelector("#lr_qn") as HTMLElement;
   qn.textContent = String(st.question.length);
-  ta.oninput = () => { st.question = ta.value; qn.textContent = String(ta.value.length); };
+  // 类神：按问句给默认，界面明示、可改（同梅花门类判定的规矩）
+  const lsBox = el(`<div class="card">
+      <div class="kv" id="lsline"></div>
+      <details><summary>改类神</summary>
+        <select id="lr_ls">
+          <option value="auto">按问句自动判</option>
+          ${LEISHEN.map((c) => `<option value="${c.id}">${esc(c.group)} · ${esc(c.label)}（看${esc(c.targets.map(targetName).join("、"))}）</option>`).join("")}
+          <option value="none">不取类神</option>
+        </select>
+        <p class="note">类神按《六壬大全》卷八类神口诀：问什么事、问哪个人，课上看哪一神。原书没列疾病、官讼的类神，这两类不取。</p>
+      </details>
+    </div>`);
+  const lsSel = lsBox.querySelector("#lr_ls") as HTMLSelectElement;
+  lsSel.value = st.leishen === null ? "none" : st.leishen;
+  const paintLs = () => {
+    const cat = st.leishen === "auto" ? detectLeishen(st.question)
+      : st.leishen === null ? null : LEISHEN.find((c) => c.id === st.leishen) ?? null;
+    (lsBox.querySelector("#lsline") as HTMLElement).textContent = cat
+      ? `类神：${st.leishen === "auto" ? "已自动判为" : "已选"}「${cat.label}」，课上看${cat.targets.map(targetName).join("、")}`
+      : st.leishen === null ? "类神：不取"
+        : st.question.trim() ? "类神：问句里没认出来，不取（可在下面自己选）" : "类神：写下问句后自动判";
+  };
+  lsSel.onchange = () => {
+    st.leishen = lsSel.value === "none" ? null : lsSel.value;
+    paintLs();
+  };
+  paintLs();
+  ta.oninput = () => { st.question = ta.value; qn.textContent = String(ta.value.length); paintLs(); };
+  app.appendChild(lsBox);
+
+  // 年命（选填）
+  const nmBox = el(`<div class="card">
+      <details${st.nm.year ? " open" : ""}>
+        <summary>补充年命（选填）——问谁的事，就填谁的出生年</summary>
+        <div class="row">
+          <div><label>出生年（公历）</label><input id="nm_y" type="number" min="1880" max="2100" placeholder="例：1990" value="${esc(st.nm.year)}" /></div>
+          <div><label>生肖</label><select id="nm_b">${DIZHI.map((z) => `<option value="${z}">${z}</option>`).join("")}</select></div>
+        </div>
+        <label><input type="radio" name="nm_g" value="男" style="width:auto" /> 男</label>
+        <label><input type="radio" name="nm_g" value="女" style="width:auto" /> 女</label>
+        <p class="note">本命取生肖；行年按《六壬大全》「男行年一嵗起丙寅」「女行年一嵗起壬申」推。
+          春节前出生的，生肖可能是上一年的，请按实际选。虚岁按春节换岁（软件约定）。只进复制文本，本站不保存。</p>
+      </details>
+    </div>`);
+  const nmY = nmBox.querySelector("#nm_y") as HTMLInputElement;
+  const nmB = nmBox.querySelector("#nm_b") as HTMLSelectElement;
+  const syncB = () => {
+    const y = Number(nmY.value);
+    if (!st.nm.benming && Number.isInteger(y) && y > 1880) nmB.value = yearZhi(y);
+    else if (st.nm.benming) nmB.value = st.nm.benming;
+  };
+  syncB();
+  nmY.oninput = () => { st.nm.year = nmY.value; st.nm.benming = ""; syncB(); };
+  nmB.onchange = () => { st.nm.benming = nmB.value as Zhi; };
+  nmBox.querySelectorAll<HTMLInputElement>('input[name="nm_g"]').forEach((r) => {
+    r.checked = r.value === st.nm.gender;
+    r.onchange = () => { if (r.checked) st.nm.gender = r.value as "男" | "女"; };
+  });
+  app.appendChild(nmBox);
   app.appendChild(backgroundCard(st.background, BACKGROUND_MAX, (v) => { st.background = v; }, "课象"));
 
   const tc = el(`
@@ -155,7 +240,7 @@ function screenQuestion(app: HTMLElement, st: LiurenState, rerender: () => void)
     if (!at) return;
     st.at = at;
     try {
-      await castShowLiuren(divineLiuren({ at: st.at, zhanshi: st.zhanshi ?? undefined, question: st.question }));
+      await castShowLiuren(divineLiuren(inputOf(st)));
     } catch { /* 起课失败留给结果页报错 */ }
     st.screen = 2;
     rerender();
@@ -179,7 +264,7 @@ function screenResult(app: HTMLElement, st: LiurenState, rerender: () => void): 
 
   let r: LiurenResult;
   try {
-    r = divineLiuren({ at: st.at, zhanshi: st.zhanshi ?? undefined, question: st.question });
+    r = divineLiuren(inputOf(st));
   } catch (e) {
     app.appendChild(el(`<div class="card">起课失败：${esc((e as Error).message)}</div>`));
     return;
@@ -196,6 +281,20 @@ function screenResult(app: HTMLElement, st: LiurenState, rerender: () => void): 
 
   if (r.question) {
     app.appendChild(el(`<div class="card">✍️ 所问：${esc(r.question)}</div>`));
+  }
+  if (r.leishen) {
+    const ls = r.leishen;
+    const chosen = ls.chosen.map((h) => {
+      const s = h.spots[0];
+      return s ? `${h.name}在${s.zhi}（临${s.seat}）${s.where.length ? "，" + s.where.join("、") : "，不在课传"}` : `${h.name}：课传中没有`;
+    }).join("；");
+    app.appendChild(el(`<div class="card note">🎯 类神（${esc(ls.cat.label)}）：${esc(chosen)}。${esc(ls.why)}。</div>`));
+  }
+  if (r.nianming) {
+    const nm = r.nianming;
+    app.appendChild(el(`<div class="card note">🧬 年命（${esc(nm.gender)}，虚岁 ${nm.age}）：` +
+      nm.spots.map((s) => `${esc(s.role)} ${esc(s.label)} 上神 ${esc(s.shang.zhi)}（${esc(s.shang.jiang)}，${esc(s.shang.relToGan)}${s.shang.kong ? "，空亡" : ""}）`).join("；") +
+      `</div>`));
   }
   if (st.background.trim()) {
     app.appendChild(el(`<div class="card note">📝 你补充的情况已附在下方复制文本里（只作情境，不影响课盘）。</div>`));

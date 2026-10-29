@@ -19,6 +19,8 @@ import { citeOf, DAQUAN_QUOTES as DQ } from "../engine/liuren/daquan.js";
 import { LIUQIN_BASIS } from "../engine/liuren/liuqin.js";
 import { SEASON_NAME, statesLine } from "../engine/liuren/wangxiang.js";
 import { GAN_WUXING } from "../engine/liuren/ganzhi.js";
+import { LEISHEN_RULES } from "../engine/liuren/leishen.js";
+import type { ZhiNote } from "../engine/liuren/result.js";
 
 const CONF_CN: Readonly<Record<string, string>> = Object.freeze({
   confirmed: "已与两家独立排盘实现逐传核过",
@@ -109,6 +111,8 @@ export function liurenFactLines(r: LiurenResult): string[] {
     }
   }
 
+  L.push(...leishenLines(r), ...nianmingLines(r));
+
   L.push(
     `【本盘所用规则的把握程度】${r.sanchuan.gate}：${CONF_CN[r.sanchuan.confidence] ?? r.sanchuan.confidence}`,
   );
@@ -117,6 +121,64 @@ export function liurenFactLines(r: LiurenResult): string[] {
 
   const q = (r.question ?? "").trim();
   if (q) L.push(`【所问之事（问卦人原话）】${q}`);
+  return L;
+}
+
+/** 某支的旁注：乘将、与日干、六亲、旺衰、空亡。 */
+function noteText(n: ZhiNote): string {
+  return `乘${n.jiang}　与日干：${n.relToGan}（六亲：${n.liuqin}）　旺衰：${n.qi}${n.kong ? "　【空亡】" : ""}`;
+}
+
+/** 【类神·有出处】节。没取类神返回空数组。 */
+export function leishenLines(r: LiurenResult): string[] {
+  const ls = r.leishen;
+  if (!ls) return [];
+  const L = [
+    `【类神·有出处】所问归为「${ls.cat.label}」（${ls.auto ? "程序按问句自动归类，问课人可改" : "问课人自选"}）。` +
+    `口诀「${ls.cat.quote.text}」（${citeOf(ls.cat.quote)}；原书无标点，照录）。`,
+  ];
+  for (const h of ls.hits) {
+    const picked = ls.chosen.includes(h) ? "【取用】" : "";
+    if (!h.spots.length) {
+      L.push(`  · ${h.name}${picked}：课传中没有。`);
+      continue;
+    }
+    for (const s of h.spots) {
+      const head = h.target.kind === "qin"
+        ? `${h.name} ${s.zhi}`
+        : h.target.kind === "shen" ? `${h.name}` : `${h.name}乘天盘 ${s.zhi}`;
+      L.push(
+        `  · ${head}${picked}：临地盘 ${s.seat}；${s.where.length ? `在${s.where.join("、")}` : "不在课传（局外）"}。` +
+        `${s.zhi} ${noteText(r.noteOf(s.zhi))}`,
+      );
+    }
+  }
+  L.push(`  取用：${ls.why}。`);
+  L.push(
+    "  取用之法原文：" + LEISHEN_RULES.map((q) => `「${q.text}」`).join("") +
+    `（${citeOf(LEISHEN_RULES[0]!)}至第 60b 页）。原文「德合」本站未算。`,
+  );
+  return L;
+}
+
+/** 【年命】节。没填返回空数组。 */
+export function nianmingLines(r: LiurenResult): string[] {
+  const nm = r.nianming;
+  if (!nm) return [];
+  const L = [
+    `【年命】问课人填写：${nm.gender}，虚岁 ${nm.age}（按春节换岁，软件约定，非原书所定）。` +
+    "看的是地盘本命位、行年位上的天盘神（上神）。",
+  ];
+  for (const s of nm.spots) {
+    L.push(
+      `  · ${s.role} ${s.label}：地盘 ${s.zhi} 上神 ${s.shang.zhi}，${noteText(s.shang)}；` +
+      `${s.zhi}${s.inChuan ? "入三传" : "不入三传"}。`,
+    );
+  }
+  L.push(
+    `  依据：「${DQ.xnNan.text}」「${DQ.xnNv.text}」（${citeOf(DQ.xnNan)}，原书例「${DQ.xnNanLi.text}」「${DQ.xnNvLi.text}」）；` +
+    `「${DQ.liuChu.text}」（${citeOf(DQ.liuChu)}）。`,
+  );
   return L;
 }
 

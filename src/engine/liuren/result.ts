@@ -9,6 +9,8 @@ import { Solar } from "lunar-javascript";
 import { liuqinOf, type Liuqin } from "./liuqin.js";
 import { qiOfZhi, statesLine, wangxiangAt, type QiState, type WangxiangInfo } from "./wangxiang.js";
 import { DAQUAN_QUOTES } from "./daquan.js";
+import { detectLeishen, LEISHEN, readLeishen, type LeishenReading } from "./leishen.js";
+import { nianmingSpots, type NianmingInput } from "./nianming.js";
 import {
   DIZHI, JIGONG, ZHI_WUXING, GAN_WUXING, chong, xunKong, zhiIndex,
   type Gan, type Wuxing, type Zhi,
@@ -27,6 +29,22 @@ export interface LiurenInput {
   guirenRule?: GuirenRule;
   /** 问卦人原话 */
   question?: string | null;
+  /**
+   * 类神类别 id（见 leishen.ts）。不传 = 按问句自动归类；传 null = 不取类神。
+   */
+  leishen?: string | null;
+  /** 年命（选填）：出生公历年、生肖、性别。问别人的事就填那个人的。 */
+  nianming?: NianmingInput | null;
+}
+
+/** 课上某一支的旁注：天将、空亡、与日干、六亲、旺衰。类神、年命共用。 */
+export interface ZhiNote {
+  zhi: Zhi;
+  jiang: string;
+  kong: boolean;
+  relToGan: string;
+  liuqin: Liuqin;
+  qi: QiState;
 }
 
 export interface LiurenResult {
@@ -70,6 +88,16 @@ export interface LiurenResult {
   wangxiang: WangxiangInfo;
   /** 日干在本季的状态 */
   ganQi: QiState;
+  /** 类神；没取为 null。auto 表示是按问句自动归的类 */
+  leishen: (LeishenReading & { auto: boolean }) | null;
+  /** 年命：虚岁与本命、行年上神；没填为 null */
+  nianming: null | {
+    age: number;
+    gender: "男" | "女";
+    spots: Array<{ role: "本命" | "行年"; label: string; zhi: Zhi; shang: ZhiNote; inChuan: boolean }>;
+  };
+  /** 课上任一支的旁注（界面与导出用） */
+  noteOf: (z: Zhi) => ZhiNote;
   /** 本盘踩中的门派分歧，逐条并列，不替用户裁决 */
   disputes: string[];
   /** 本盘所用规则的把握程度（取最低一档） */
@@ -134,6 +162,40 @@ export function divineLiuren(input: LiurenInput): LiurenResult {
     qi: qiOfZhi(wx, c.zhi),
   }));
 
+  const noteOf = (z: Zhi): ZhiNote => {
+    const rel = relToGan(gan, z);
+    return { zhi: z, jiang: tj.byTian[z] as string, kong: isKong(z), relToGan: rel, liuqin: liuqinOf(rel), qi: qiOfZhi(wx, z) };
+  };
+
+  // 类神：未指定就按问句自动归类；指定 null 则不取
+  const lsCat = input.leishen === undefined
+    ? detectLeishen(input.question ?? "")
+    : input.leishen === null ? null : LEISHEN.find((c) => c.id === input.leishen) ?? null;
+  const leishen = lsCat
+    ? {
+      ...readLeishen(lsCat, {
+        tian: plate.tian, diOf: plate.diOf, jiangOf: tj.byTian as Record<string, string>,
+        keShang: sike.ke.map((k) => k.shang), chuan: sanchuan.chuan.map((c) => c.zhi),
+        liuqinOf: (z) => liuqinOf(relToGan(gan, z)),
+      }),
+      auto: input.leishen === undefined,
+    }
+    : null;
+
+  // 年命
+  let nianming: LiurenResult["nianming"] = null;
+  if (input.nianming) {
+    const nm = nianmingSpots(input.nianming, at, plate.tian);
+    const chuanZ = sanchuan.chuan.map((c) => c.zhi);
+    nianming = {
+      age: nm.age,
+      gender: input.nianming.gender,
+      spots: nm.spots.map((s) => ({
+        role: s.role, label: s.label, zhi: s.zhi, shang: noteOf(s.shang), inChuan: chuanZ.includes(s.zhi),
+      })),
+    };
+  }
+
   const disputes: string[] = [];
   if (sanchuan.disputeNote) disputes.push(sanchuan.disputeNote);
   disputes.push(...sanchuan.altNotes);
@@ -167,6 +229,7 @@ export function divineLiuren(input: LiurenInput): LiurenResult {
     yuejiang: { ...yj, jiangName: JIANG_NAME[yj.zhi]! },
     plate, rows, sike, sanchuan, tianjiang: tj,
     kongwang, xunshou, chuanDetail, wangxiang: wx, ganQi: wx.states[GAN_WUXING[gan]!]!,
+    leishen, nianming, noteOf,
     disputes, confidence,
     question: (input.question ?? "").trim() || null,
   };

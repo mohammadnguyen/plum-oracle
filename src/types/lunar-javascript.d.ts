@@ -14,6 +14,7 @@ declare module "lunar-javascript" {
     getSolar(): SolarTime;
   }
   export interface Lunar {
+    getYear(): number;
     getMonth(): number;
     getDay(): number;
     getYearZhi(): string;

@@ -229,6 +229,14 @@ python web/tests/fixtures/gen_prompt_parity.py
 - 六壬导出附【天将类象·有出处】（只列三传所乘天将）；两版六壬要求改为只许逐字截取表中原句。
 - 两版六壬要求明写「这是大六壬（不是小六壬，也不是六壬金口诀）」。
 
+### 九之八、同日追加：六壬类神、年命（宪法 §0.3 ⑫）
+
+- `src/engine/liuren/leishen.ts`（卷八类神口诀 17 类 + 取用之法）、`nianming.ts`（本命、行年、虚岁）；
+  `result.ts` 新增输入 `leishen`、`nianming`，结果带 `leishen`、`nianming`、`noteOf`。
+- 导出新增【类神·有出处】【年命】两节；两版六壬要求各加用法与禁词。
+- 界面：类神自动归类（可改、可不取）；年命选填卡（出生年、生肖、性别）。
+- `daquan.ts` 新增 27 条引文，`verify:liuren` 共 45 条全过。新增 `tests/liuren-leishen.test.ts`（10 条），全仓 177 条全绿。
+
 ### 九之七、同日追加：六壬六亲、旺相休囚；梅花外应（宪法 §0.3 ⑪）
 
 - `src/engine/liuren/daquan.ts`（引文出处钉）、`wangxiang.ts`（旺相休囚，从卷五原文解析）、`liuqin.ts`（六亲）；
