@@ -229,6 +229,13 @@ python web/tests/fixtures/gen_prompt_parity.py
 - 六壬导出附【天将类象·有出处】（只列三传所乘天将）；两版六壬要求改为只许逐字截取表中原句。
 - 两版六壬要求明写「这是大六壬（不是小六壬，也不是六壬金口诀）」。
 
+### 九之十、同日追加：六壬毕法赋（宪法 §0.3 ⑭）
+
+- `src/engine/liuren/bifa.ts`（46 条主格判定）、`bifaData.ts`（赋文与定义原句，脚本生成）；`result.ts` 带 `bifa`。
+- 导出新增【毕法赋·本课命中】节；两版六壬要求加用法；界面结果页加毕法赋一栏。
+- `daquan.ts` 新增墓、六合、自刑、三合四句；`verify:liuren` 共 98 条引文全过。
+- 新增 `tests/liuren-bifa.test.ts`（含原书课例 409 例回归夹具）。全仓 186 条全绿。
+
 ### 九之九、同日追加：梅花方卦之应（宪法 §0.3 ⑬）
 
 - `src/engine/waiying.ts` 新增 `FANGGUA_RULE`、`readFanggua`；外应合断纳入有定论的方卦之应。

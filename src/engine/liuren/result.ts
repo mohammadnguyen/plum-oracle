@@ -11,6 +11,7 @@ import { qiOfZhi, statesLine, wangxiangAt, type QiState, type WangxiangInfo } fr
 import { DAQUAN_QUOTES } from "./daquan.js";
 import { detectLeishen, LEISHEN, readLeishen, type LeishenReading } from "./leishen.js";
 import { nianmingSpots, type NianmingInput } from "./nianming.js";
+import { evalBifa, type BifaHit } from "./bifa.js";
 import {
   DIZHI, JIGONG, ZHI_WUXING, GAN_WUXING, chong, xunKong, zhiIndex,
   type Gan, type Wuxing, type Zhi,
@@ -98,6 +99,8 @@ export interface LiurenResult {
   };
   /** 课上任一支的旁注（界面与导出用） */
   noteOf: (z: Zhi) => ZhiNote;
+  /** 本课命中的毕法赋条目（见 bifa.ts；只判主格） */
+  bifa: BifaHit[];
   /** 本盘踩中的门派分歧，逐条并列，不替用户裁决 */
   disputes: string[];
   /** 本盘所用规则的把握程度（取最低一档） */
@@ -196,6 +199,16 @@ export function divineLiuren(input: LiurenInput): LiurenResult {
     };
   }
 
+  const bifa = evalBifa({
+    dayGanZhi, gan, zhi, jigong: JIGONG[gan]!, tian: plate.tian, diOf: plate.diOf,
+    fuyin: plate.fuyin, fanyin: plate.fanyin,
+    keShang: sike.ke.map((k) => k.shang) as [Zhi, Zhi, Zhi, Zhi],
+    chuan: sanchuan.chuan.map((c) => c.zhi) as [Zhi, Zhi, Zhi],
+    jiangOf: tj.byTian as Record<string, string>, guirenZhi: tj.guirenZhi, yuejiang: yj.zhi,
+    benming: input.nianming?.benming ?? null,
+    xingnianZhi: nianming?.spots.find((s) => s.role === "行年")?.zhi ?? null,
+  });
+
   const disputes: string[] = [];
   if (sanchuan.disputeNote) disputes.push(sanchuan.disputeNote);
   disputes.push(...sanchuan.altNotes);
@@ -229,7 +242,7 @@ export function divineLiuren(input: LiurenInput): LiurenResult {
     yuejiang: { ...yj, jiangName: JIANG_NAME[yj.zhi]! },
     plate, rows, sike, sanchuan, tianjiang: tj,
     kongwang, xunshou, chuanDetail, wangxiang: wx, ganQi: wx.states[GAN_WUXING[gan]!]!,
-    leishen, nianming, noteOf,
+    leishen, nianming, noteOf, bifa,
     disputes, confidence,
     question: (input.question ?? "").trim() || null,
   };

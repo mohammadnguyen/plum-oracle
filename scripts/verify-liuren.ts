@@ -10,6 +10,7 @@
  * 任何一条不过，进程以非零退出。
  */
 import { DAQUAN_PIN, DAQUAN_QUOTES } from "../src/engine/liuren/daquan.js";
+import { BIFA_SOURCES } from "../src/engine/liuren/bifaData.js";
 
 const cache = new Map<string, { clean: string; page: string[] }>();
 async function load(juan: string) {
@@ -39,7 +40,15 @@ async function load(juan: string) {
 }
 
 let bad = 0;
-const all = Object.entries(DAQUAN_QUOTES);
+// 毕法赋各条：定义句按卷页次数核；赋文须见于卷九开头目录
+const bifaQuotes = BIFA_SOURCES.map((b) => [`毕法${b.n}`, { juan: b.juan, page: b.page, text: b.quote, count: b.count }] as const);
+for (const b of BIFA_SOURCES) {
+  const { clean } = await load("009");
+  const ok = clean.includes(b.title);
+  if (!ok) bad++;
+  console.log(`${ok ? "✓" : "✗"} 毕法${b.n} 赋文  ${b.title}`);
+}
+const all = [...Object.entries(DAQUAN_QUOTES), ...bifaQuotes];
 for (const [key, x] of all) {
   const { clean, page } = await load(x.juan);
   const count = clean.split(x.text).length - 1;

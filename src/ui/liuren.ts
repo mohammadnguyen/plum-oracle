@@ -296,6 +296,11 @@ function screenResult(app: HTMLElement, st: LiurenState, rerender: () => void): 
       nm.spots.map((s) => `${esc(s.role)} ${esc(s.label)} 上神 ${esc(s.shang.zhi)}（${esc(s.shang.jiang)}，${esc(s.shang.relToGan)}${s.shang.kong ? "，空亡" : ""}）`).join("；") +
       `</div>`));
   }
+  if (r.bifa.length) {
+    app.appendChild(el(`<div class="card note">📜 毕法赋（《六壬大全》卷九、卷十）本课命中：<br />` +
+      r.bifa.map((h) => `第${h.n}条「${esc(h.title)}」——${esc(h.ge)}：${esc(h.why)}`).join("<br />") +
+      `<br />只判原书注文写清的 46 条主格；口诀里的吉凶是古书断语，解读时只取与所问相关的。</div>`));
+  }
   if (st.background.trim()) {
     app.appendChild(el(`<div class="card note">📝 你补充的情况已附在下方复制文本里（只作情境，不影响课盘）。</div>`));
   }

@@ -80,7 +80,7 @@ describe("导出：三传带六亲与旺衰，依据逐字带出", () => {
     expect(C).toContain("「死」「囚」「休」只是力量强弱的名目，不说成死亡、官司、生病");
     expect(C).toContain("只照那一节写出的「所指」原句说");
     expect(C).toContain("六亲、官鬼、妻财、子孙、旺相、休囚、月建");
-    expect(C).toContain("【天将类象·有出处】【六亲·有出处】【旺相休囚】【类神·有出处】【年命】给出的原句");
+    expect(C).toContain("【天将类象·有出处】【六亲·有出处】【旺相休囚】【类神·有出处】【年命】【毕法赋·本课命中】给出的原句");
     expect(LIUREN_REQUIREMENTS).toContain("「死」「囚」「休」不讲成死亡、官司、疾病");
     expect(LIUREN_REQUIREMENTS).toContain("没写所指的不补");
   });

@@ -111,7 +111,7 @@ export function liurenFactLines(r: LiurenResult): string[] {
     }
   }
 
-  L.push(...leishenLines(r), ...nianmingLines(r));
+  L.push(...leishenLines(r), ...nianmingLines(r), ...bifaLines(r));
 
   L.push(
     `【本盘所用规则的把握程度】${r.sanchuan.gate}：${CONF_CN[r.sanchuan.confidence] ?? r.sanchuan.confidence}`,
@@ -158,6 +158,23 @@ export function leishenLines(r: LiurenResult): string[] {
     "  取用之法原文：" + LEISHEN_RULES.map((q) => `「${q.text}」`).join("") +
     `（${citeOf(LEISHEN_RULES[0]!)}至第 60b 页）。原文「德合」本站未算。`,
   );
+  return L;
+}
+
+/** 【毕法赋·本课命中】节。一条都没中返回空数组。 */
+export function bifaLines(r: LiurenResult): string[] {
+  if (!r.bifa.length) return [];
+  const L = [
+    "【毕法赋·本课命中】《六壬大全》卷九、卷十「毕法赋」一百条，本站只判其中原书注文写清、引擎算得出的 46 条主格；" +
+    "下列是本课成立的条目（赋文与定义句照录原文，无标点）。",
+  ];
+  for (const h of r.bifa) {
+    const juan = h.src.juan === "009" ? "九" : "十";
+    L.push(
+      `  · 第${h.n}条「${h.title}」——本课成「${h.ge}」：${h.why}。原书：「${h.src.quote}」（卷${juan}第 ${h.src.page.split("-")[1]} 页）`,
+    );
+  }
+  L.push("  原书第九十八条「非占現類勿言之」：赋文说的事与所问无关的，不必讲。");
   return L;
 }
 
