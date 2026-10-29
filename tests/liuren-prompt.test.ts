@@ -318,7 +318,8 @@ describe("十二天将类象表（《六壬大全》卷二原句）", () => {
     expect(LIUREN_CHAT_REQUIREMENTS).toContain("只在第一次引天将时说一句");
     expect(LIUREN_CHAT_REQUIREMENTS).toContain("「如果碰到」这个条件不省掉");
     expect(LIUREN_CHAT_REQUIREMENTS).toContain("「始终」「一直」");
-    expect(LIUREN_CHAT_REQUIREMENTS).toContain("如果按另一种算法，这一课的白天黑夜归属不同");
+    // 2026-10-29 小白版：只动天将的分歧合成一句，仍须说清换算法后整盘天将跟着变
+    expect(LIUREN_CHAT_REQUIREMENTS).toContain("换一种的话，上面说的人和事、劲大劲小会不同；起头、中途、落脚不变");
     expect(LIUREN_CHAT_REQUIREMENTS).toContain("返吟只说事情这一路来回反复");
     expect(LIUREN_CHAT_REQUIREMENTS).toContain("三处有压、没有一处帮他的，说偏难");
   });

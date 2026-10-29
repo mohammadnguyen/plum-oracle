@@ -273,7 +273,19 @@ const RULES: Readonly<Record<number, Rule>> = {
       return ok("俱生", `干上 ${h.ganShang} 生日干，支上 ${h.zhiShang} 生日支`);
     return null;
   },
-  81: (h) => h.zhong === MU[h.wx(h.chu)] ? ok("传墓入墓", `中传 ${h.zhong} 为初传 ${h.chu} 之墓`) : null,
+  81: (h) => {
+    if (h.zhong !== MU[h.wx(h.chu)]) return null;
+    // 憎爱按初传对日干的类别：原书「如是日之財神禄神長生官星等不可值中末之墓，如是日之鬼及盜炁等却喜中末墓也」。
+    // 禄、长生本站未算，财与生日之神（父母）可判；官鬼常人作「鬼」论（有官人占官则作官星，原书不宜入墓）。
+    const q = h.qin(h.chu);
+    const base = `中传 ${h.zhong} 为初传 ${h.chu} 之墓`;
+    if (q === "妻财" || q === "父母")
+      return ok("传墓入墓（憎）", `${base}；初传是日干之${q === "妻财" ? "财" : "生神（父母）"}，原书说这类「不可值中末之墓」，入墓不好`);
+    if (q === "官鬼" || q === "子孙")
+      return ok("传墓入墓（爱）", `${base}；初传是${q === "官鬼" ? "克日干之鬼" : "耗日干之盗气（子孙）"}，原书说这类「却喜中末墓」，入墓反好` +
+        (q === "官鬼" ? "（有官之人占求官时，原书作官星论，则不宜入墓）" : ""));
+    return ok("传墓入墓", `${base}；初传与日干同类，原书憎爱一句未列这一类`);
+  },
   82: (h) => h.kongOrLuo(h.zhong) && h.kongOrLuo(h.mo) ? ok("不行传", `中传 ${h.zhong}、末传 ${h.mo} 皆空（旬空或坐空）`) : null,
   83: (h) => {
     const set = new Set<string>(h.chuan);
