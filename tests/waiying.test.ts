@@ -8,7 +8,7 @@ import { duanshiFull } from "../src/engine/rules/netassess.js";
 import { buildExportPrompt } from "../src/prompt/buildPrompt.js";
 import { CHAT_REQUIREMENTS } from "../src/prompt/chatRequirements.js";
 import { PLAIN_REQUIREMENTS } from "../src/prompt/plainRequirements.js";
-import { neiSide, readWaiying, SHIYING_RULE, WAIYING } from "../src/engine/waiying.js";
+import { FANGGUA_RULE, neiSide, readFanggua, readWaiying, SHIYING_RULE, WAIYING } from "../src/engine/waiying.js";
 
 describe("外应表", () => {
   it("条目 id 不重复；每条都有原文与行号，落在卷二十应各篇（L1013–L1067）", () => {
@@ -77,5 +77,37 @@ describe("导出", () => {
     expect(CHAT_REQUIREMENTS).toContain("有【外应】的");
     expect(CHAT_REQUIREMENTS).toContain("结论和档名不变");
     expect(PLAIN_REQUIREMENTS).toContain("盘面有【外应】的");
+  });
+});
+
+describe("方卦之应（卷二三十四 L1035）：来人方位 × 用卦", () => {
+  it("原书两例：坎为用卦宜在坎与震巽、在离不吉；离为用卦宜在离与坤艮、在乾兑不吉", () => {
+    expect(FANGGUA_RULE.exKan).toBe("如坎为用卦，宜在坎与震、巽之位，在离则不吉");
+    expect(["坎", "震", "巽", "离"].map((g) => readFanggua(g, "某方", "坎").verdict)).toEqual(["宜", "宜", "宜", "不宜"]);
+    expect(["离", "坤", "艮", "乾", "兑"].map((g) => readFanggua(g, "某方", "离").verdict)).toEqual(["宜", "宜", "宜", "不宜", "不宜"]);
+  });
+
+  it("原书没说的关系照实标「未论」：方位生用、方位克用、同五行而异卦", () => {
+    expect(readFanggua("乾", "西北", "坎").verdict).toBe("未论");   // 金生水
+    expect(readFanggua("坤", "西南", "坎").verdict).toBe("未论");   // 土克水
+    expect(readFanggua("兑", "正西", "乾").verdict).toBe("未论");   // 同为金，非本卦
+  });
+
+  it("只有「未论」的方卦时无从合断，不引原书合断句", () => {
+    const w = readWaiying([], "金", "吉", { gua: "乾", dir: "西北", yong: "坎" })!;
+    expect(w.wai).toBe("无从合断");
+    expect(w.rule).toEqual([]);
+    // 有定论的方卦参与合断
+    const w2 = readWaiying([], "金", "吉", { gua: "离", dir: "正南", yong: "坎" })!;
+    expect(w2.wai).toBe("不吉");
+    expect(w2.rule[0]).toBe(SHIYING_RULE.neiJiWaiXiong);
+  });
+
+  it("导出带方卦一行与原文", () => {
+    const r = divine("object_direction", { object_gua: "兑", direction_gua: "坤", hour_dizhi: "子" });
+    const f = duanshiFull(10, r, { lunarMonth: 7 });
+    const out = buildExportPrompt(r, f, { laiFang: { gua: "离", dir: "正南" } });
+    expect(out.waiying).toContain(`· 方卦之应：来问之人站在占者的正南（离方），用卦为${r.yong}`);
+    expect(out.waiying).toContain(`「${FANGGUA_RULE.rule}」`);
   });
 });

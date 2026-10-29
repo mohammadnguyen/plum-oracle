@@ -6,7 +6,7 @@
  * 逐条断言：表中原文是所记那一行的子串；十应目论各句是 L1007 的子串。任何一条不过，进程以非零退出。
  */
 import { readFileSync, existsSync } from "node:fs";
-import { SHIYING_RULE, WAIYING } from "../src/engine/waiying.js";
+import { FANGGUA_RULE, SHIYING_RULE, WAIYING } from "../src/engine/waiying.js";
 
 const path = process.argv[2] ?? "../《梅花易数》.txt";
 if (!existsSync(path)) {
@@ -23,7 +23,8 @@ const check = (label: string, line: number, quote: string) => {
 };
 for (const x of WAIYING) check(x.id, x.line, x.quote);
 for (const [k, v] of Object.entries(SHIYING_RULE)) if (k !== "line") check(k, SHIYING_RULE.line, String(v));
+for (const k of ["kan", "rule", "exKan", "exLi"] as const) check(`方卦${k}`, FANGGUA_RULE.line, FANGGUA_RULE[k]);
 
-const n = WAIYING.length + Object.keys(SHIYING_RULE).length - 1;
+const n = WAIYING.length + Object.keys(SHIYING_RULE).length - 1 + 4;
 console.log(bad ? `\n${bad} 条未通过` : `\n${n} 条全部逐字核对通过（${path}）`);
 process.exit(bad ? 1 : 0);

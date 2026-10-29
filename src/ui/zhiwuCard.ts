@@ -2,8 +2,8 @@
  * 指物 · 方位起卦的输入卡：写下看到的东西 → 按原书《八卦万物属类》查卦；
  * 方位用手机指南针读，或手选。查表与切方位都在 engine/zhiwu.ts，这里只管交互。
  */
-import { FANG, FANG_SOURCE, headingToFang, matchObject, soleTopGua, WANWU_ITEMS, type ZhiwuMatch } from "../engine/zhiwu.js";
-import { startCompass, type CompassStop } from "./compass.js";
+import { FANG, FANG_SOURCE, matchObject, soleTopGua, WANWU_ITEMS, type ZhiwuMatch } from "../engine/zhiwu.js";
+import { fangPicker } from "./fangPicker.js";
 import { el, esc } from "./shared.js";
 
 export interface ZhiwuState {
@@ -44,19 +44,7 @@ export function zhiwuCard(st: ZhiwuState): HTMLElement {
       </details>
 
       <label style="margin-top:16px">它在你哪个方向？（作下卦）</label>
-      <p class="note" style="margin-top:0">把手机顶端对着那件东西，点下面的按钮。</p>
-      <button class="inline" id="b_compass" type="button">🧭 用手机指南针定方位</button>
-      <div class="compass" id="compass" hidden>
-        <div class="dial" aria-hidden="true"><span class="n">北</span><div class="needle"></div></div>
-        <div class="read" id="cread">正在读指南针…</div>
-      </div>
-      <button class="inline primary" id="b_lock" type="button" hidden>就用这个方位</button>
-      <p class="note" id="cnote"></p>
-      <select id="f_dir" aria-label="手动选方位">
-        <option value="">— 或手动选方位 —</option>
-        ${FANG.map((f) => `<option value="${f.gua}"${st.dirGua === f.gua ? " selected" : ""}>${f.dir} · ${f.gua}</option>`).join("")}
-      </select>
-      <div class="picked" id="dirpicked"></div>
+      <div id="dirslot"></div>
       <p class="note">物卦按原书卷一四十五《八卦万物属类》查；方位按${esc(FANG_SOURCE)}。
         手机指南针读的是磁北，靠近两方交界时请核对一下。</p>
     </div>`);
@@ -66,14 +54,9 @@ export function zhiwuCard(st: ZhiwuState): HTMLElement {
   const box = $<HTMLElement>("#objmatches");
   const objPicked = $<HTMLElement>("#objpicked");
   const objSel = $<HTMLSelectElement>("#f_obj");
-  const dirSel = $<HTMLSelectElement>("#f_dir");
-  const dirPicked = $<HTMLElement>("#dirpicked");
 
   const paintObjPicked = () => {
     objPicked.innerHTML = st.objGua ? `上卦：<b>${esc(st.objGua)}</b>　${esc(st.objNote)}` : "";
-  };
-  const paintDirPicked = () => {
-    dirPicked.innerHTML = st.dirGua ? `下卦：<b>${esc(st.dirGua)}</b>　${esc(st.dirNote)}` : "";
   };
 
   const search = () => {
@@ -115,54 +98,17 @@ export function zhiwuCard(st: ZhiwuState): HTMLElement {
     paintObjPicked();
   };
 
-  // ── 指南针 ──
-  let stop: CompassStop | null = null;
-  let last: ReturnType<typeof headingToFang> | null = null;
-  const comp = $<HTMLElement>("#compass");
-  const read = $<HTMLElement>("#cread");
-  const needle = $<HTMLElement>(".needle");
-  const lock = $<HTMLButtonElement>("#b_lock");
-  const cnote = $<HTMLElement>("#cnote");
-  $<HTMLButtonElement>("#b_compass").onclick = async () => {
-    stop?.();
-    comp.hidden = false;
-    cnote.textContent = "";
-    read.textContent = "正在读指南针…";
-    stop = await startCompass(
-      (deg, acc) => {
-        last = headingToFang(deg);
-        needle.style.transform = `rotate(${-deg}deg)`;
-        read.innerHTML = `${esc(last.dir)} · ${esc(last.gua)}<small>${Math.round(deg)}°${acc != null ? ` ±${Math.round(acc)}°` : ""}` +
-          `${last.nearEdge ? " · 靠近两方交界，稍偏就换一卦" : ""}</small>`;
-        lock.hidden = false;
-      },
-      (why) => {
-        comp.hidden = true;
-        lock.hidden = true;
-        cnote.textContent = why;
-      },
-    );
-  };
-  lock.onclick = () => {
-    if (!last) return;
-    stop?.(); stop = null;
-    st.dirGua = last.gua;
-    st.dirNote = `指南针 ${Math.round(last.deg)}°（磁北）→ ${last.dir}${last.nearEdge ? "，靠近交界" : ""}`;
-    dirSel.value = last.gua;
-    lock.hidden = true;
-    paintDirPicked();
-  };
-  dirSel.onchange = () => {
-    stop?.(); stop = null;
-    lock.hidden = true;
-    const f = FANG.find((x) => x.gua === dirSel.value);
-    st.dirGua = f ? f.gua : null;
-    st.dirNote = f ? `手选 ${f.dir}` : "";
-    paintDirPicked();
-  };
+  // ── 方位：指南针或手选 ──
+  const f0 = FANG.find((x) => x.gua === st.dirGua);
+  const picker = fangPicker({
+    label: "下卦",
+    hint: "把手机顶端对着那件东西，点下面的按钮。",
+    value: f0 ? { gua: f0.gua, dir: f0.dir, note: st.dirNote } : null,
+    onPick: (v) => { st.dirGua = v?.gua ?? null; st.dirNote = v?.note ?? ""; },
+  });
+  $<HTMLElement>("#dirslot").appendChild(picker);
 
   if (st.objText) search(); else paintObjPicked();
-  paintDirPicked();
-  (card as any).__stop = () => stop?.();
+  (card as any).__stop = () => picker.__stop?.();
   return card;
 }

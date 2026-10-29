@@ -11,12 +11,15 @@
  *   · 「不论卦象」的外应（乌鸦报灾、灵鹊报喜、枷锁防官灾、物圆事成……）——那是不经生克的直断，
  *     与天将表不收强断语同一考虑。
  *   · L1050「水之气属震、巽」——按上下文与白话释意当作「木之气」，TXT 疑有讹字，不据以入表。
- *   · 时令之应（引擎已有旺衰）、方卦之应（看来人方位与用卦，另一套算法）、言语、写字之应。
+ *   · 时令之应（引擎已有旺衰）、言语、写字之应。
+ *   · 方卦之应只收第一层「来占之人所在方位 × 用卦」（见下 FANGGUA_RULE）；同条后半「水从坎方来」的卦气、
+ *     「震、巽之方，不论坤、艮」诸句不收（后者 TXT 且有「坎方不不论离」衍字）。
  *
  * 外应不改【最终极性】：原书 L1007 一面说「内外卦全吉，则断然吉」「内卦吉而外卦不吉，反破其吉」，
  * 一面又说「又须详理以断吉凶，慎不可胶柱鼓瑟也」。本站把内外是否一致和原书原话摆出来，档名不动。
  */
-import { relate, TONE, type Relation } from "./wuxing.js";
+import { KE, relate, SHENG, TONE, type Relation } from "./wuxing.js";
+import { BAGUA } from "./bagua.js";
 
 export const WAIYING_FILE = "《梅花易数》.txt";
 
@@ -108,6 +111,40 @@ export const SHIYING_RULE = Object.freeze({
   xiangLi: "其内吉外凶，内凶外吉，又须详理以断吉凶，慎不可胶柱鼓瑟也",
 });
 
+/**
+ * 方卦之应（卷二三十四，L1035）：看来占之人站在占者何方，以用卦参详。
+ * 原书只说了三种：方位之卦即用卦本卦（宜）、用卦所生（宜）、受用卦克（不宜）；
+ * 其余（方位生用、方位克用、同五行而异卦）原书此句未论，照实标「未论」，不推。
+ */
+export const FANGGUA_RULE = Object.freeze({
+  line: 1035,
+  section: "卷二三十四 复明方卦之应",
+  kan: "看来占之人在何方位，而以用卦参详",
+  rule: "盖宜在本卦之方，为用卦生之方，不宜受用卦克也",
+  exKan: "如坎为用卦，宜在坎与震、巽之位，在离则不吉",
+  exLi: "离为用卦，宜在离与坤、艮之位，在乾、兑二位则不吉矣",
+});
+
+export interface FangguaReading {
+  /** 来人所在方位与其卦 */
+  dir: string;
+  fangGua: string;
+  yong: string;
+  verdict: "宜" | "不宜" | "未论";
+  why: string;
+}
+
+export function readFanggua(fangGua: string, dir: string, yong: string): FangguaReading {
+  const fw = BAGUA[fangGua]?.wuxing;
+  const yw = BAGUA[yong]?.wuxing;
+  if (!fw || !yw) throw new Error(`方卦之应：未知卦 ${fangGua} / ${yong}`);
+  const r = (verdict: FangguaReading["verdict"], why: string) => ({ dir, fangGua, yong, verdict, why });
+  if (fangGua === yong) return r("宜", "来人在用卦本卦之方");
+  if (SHENG[yw] === fw) return r("宜", `用卦${yong}（${yw}）生方位之卦${fangGua}（${fw}），为用卦生之方`);
+  if (KE[yw] === fw) return r("不宜", `方位之卦${fangGua}（${fw}）受用卦${yong}（${yw}）克`);
+  return r("未论", `方位之卦${fangGua}（${fw}）与用卦${yong}（${yw}）的这种关系，原书此句未论`);
+}
+
 export interface WaiyingHit {
   entry: WaiyingEntry;
   rel: Relation;
@@ -118,8 +155,10 @@ export interface WaiyingHit {
 
 export interface WaiyingReading {
   hits: WaiyingHit[];
-  /** 外卦合起来：全吉、全不吉、有吉有不吉 */
-  wai: "吉" | "不吉" | "有吉有不吉";
+  /** 方卦之应（填了来人方位才有） */
+  fang: FangguaReading | null;
+  /** 外卦合起来：全吉、全不吉、有吉有不吉；只有「未论」的方卦时为「无从合断」 */
+  wai: "吉" | "不吉" | "有吉有不吉" | "无从合断";
   /** 内卦（本盘最终极性）偏哪边 */
   nei: "吉" | "不吉";
   /** 原书对这一种内外组合的原话（L1007 逐字），可能不止一句 */
@@ -133,7 +172,11 @@ export function neiSide(finalVerdict: string): "吉" | "不吉" {
   return /凶/.test(finalVerdict) ? "不吉" : "吉";
 }
 
-export function readWaiying(ids: readonly string[], tiWuxing: string, finalVerdict: string): WaiyingReading | null {
+export function readWaiying(
+  ids: readonly string[], tiWuxing: string, finalVerdict: string,
+  fangIn?: { gua: string; dir: string; yong: string } | null,
+): WaiyingReading | null {
+  const fang = fangIn ? readFanggua(fangIn.gua, fangIn.dir, fangIn.yong) : null;
   const hits = ids
     .map((id) => WAIYING.find((x) => x.id === id))
     .filter((x): x is WaiyingEntry => !!x)
@@ -141,16 +184,19 @@ export function readWaiying(ids: readonly string[], tiWuxing: string, finalVerdi
       const rel = relate(tiWuxing, entry.wuxing);
       return { entry, rel, tone: TONE[rel]!, ji: JI_SIDE.has(rel) };
     });
-  if (!hits.length) return null;
-  const nJi = hits.filter((h) => h.ji).length;
-  const wai = nJi === hits.length ? "吉" : nJi === 0 ? "不吉" : "有吉有不吉";
+  if (!hits.length && !fang) return null;
+  // 参与合断的：各条外应，加上有定论的方卦之应
+  const sides = [...hits.map((h) => h.ji), ...(fang && fang.verdict !== "未论" ? [fang.verdict === "宜"] : [])];
+  const nJi = sides.filter(Boolean).length;
+  const wai = !sides.length ? "无从合断" : nJi === sides.length ? "吉" : nJi === 0 ? "不吉" : "有吉有不吉";
   const nei = neiSide(finalVerdict);
   const Rr = SHIYING_RULE;
   const rule =
-    wai === "有吉有不吉" ? [Rr.xiangLi]
+    wai === "无从合断" ? []
+    : wai === "有吉有不吉" ? [Rr.xiangLi]
       : nei === "吉" && wai === "吉" ? [Rr.quanJi]
         : nei === "不吉" && wai === "不吉" ? [Rr.quanXiong]
           : nei === "不吉" ? [Rr.neiXiongWaiJi, Rr.xiangLi]
             : [Rr.neiJiWaiXiong, Rr.xiangLi];
-  return { hits, wai, nei, rule };
+  return { hits, fang, wai, nei, rule };
 }

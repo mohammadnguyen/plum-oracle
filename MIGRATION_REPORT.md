@@ -229,6 +229,12 @@ python web/tests/fixtures/gen_prompt_parity.py
 - 六壬导出附【天将类象·有出处】（只列三传所乘天将）；两版六壬要求改为只许逐字截取表中原句。
 - 两版六壬要求明写「这是大六壬（不是小六壬，也不是六壬金口诀）」。
 
+### 九之九、同日追加：梅花方卦之应（宪法 §0.3 ⑬）
+
+- `src/engine/waiying.ts` 新增 `FANGGUA_RULE`、`readFanggua`；外应合断纳入有定论的方卦之应。
+- `src/ui/fangPicker.ts`：指南针 / 手选定方位的部件，指物下卦与来人方位共用。
+- 导出【外应】节新增方卦一行；`tests/waiying.test.ts` 加 4 条（含原书两例）。全仓 181 条全绿。
+
 ### 九之八、同日追加：六壬类神、年命（宪法 §0.3 ⑫）
 
 - `src/engine/liuren/leishen.ts`（卷八类神口诀 17 类 + 取用之法）、`nianming.ts`（本命、行年、虚岁）；

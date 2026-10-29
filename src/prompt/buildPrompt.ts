@@ -20,7 +20,7 @@ import { getYaoci, type YaociInfo } from "../engine/corpus/guayaoci.js";
 import { PLAIN_REQUIREMENTS } from "./plainRequirements.js";
 import { CHAT_REQUIREMENTS } from "./chatRequirements.js";
 import { backgroundLines, FOLLOWUP_MEIHUA } from "./conversation.js";
-import { readWaiying, SHIYING_RULE, WAIYING_FILE } from "../engine/waiying.js";
+import { FANGGUA_RULE, readWaiying, SHIYING_RULE, WAIYING_FILE } from "../engine/waiying.js";
 
 const C = contract as { DUANSHI_APPENDIX: string; KOUWEN_FEWSHOT: string; SELF_CHECKLIST: string };
 
@@ -237,8 +237,10 @@ const WAIYING_REL: Readonly<Record<string, string>> = Object.freeze({
  * 外应节（程序判定，不在 facts 内）。没选外应返回空数组。
  * 外应即一个「用」，吉凶用已签收的体用生克表；内外合断只摆原书 L1007 的原话，不改最终极性。
  */
-export function waiyingLines(r: CastResult, finalVerdict: string, ids: readonly string[]): string[] {
-  const w = readWaiying(ids, r.ti_wuxing, finalVerdict);
+export function waiyingLines(
+  r: CastResult, finalVerdict: string, ids: readonly string[], fang?: { gua: string; dir: string } | null,
+): string[] {
+  const w = readWaiying(ids, r.ti_wuxing, finalVerdict, fang ? { ...fang, yong: r.yong } : null);
   if (!w) return [];
   const L = [
     `【外应（起卦时问卦人身边的所见所闻；程序按原书十应「论卦象」一路对卦，「${SHIYING_RULE.asYong}」）】`,
@@ -250,9 +252,18 @@ export function waiyingLines(r: CastResult, finalVerdict: string, ids: readonly 
       `（${x.section}·L${x.line}）。与体 ${r.ti}（${r.ti_wuxing}）：${WAIYING_REL[h.rel]}（${h.tone}）`,
     );
   }
+  if (w.fang) {
+    const F = FANGGUA_RULE;
+    L.push(
+      `  · 方卦之应：来问之人站在占者的${w.fang.dir}（${w.fang.fangGua}方），用卦为${w.fang.yong}——${w.fang.verdict}：${w.fang.why}。` +
+      `原书「${F.kan}」「${F.rule}」（${F.section}·L${F.line}）`,
+    );
+  }
   L.push(
-    `  外应合起来：${w.wai}；本盘最终极性在${w.nei}的一边。原书十应目论：` +
-    w.rule.map((s) => `「${s}」`).join("") + `（${WAIYING_FILE} L${SHIYING_RULE.line}）`,
+    w.wai === "无从合断"
+      ? "  外应合起来：方卦这一项原书未论，无从合断。"
+      : `  外应合起来：${w.wai}；本盘最终极性在${w.nei}的一边。原书十应目论：` +
+        w.rule.map((s) => `「${s}」`).join("") + `（${WAIYING_FILE} L${SHIYING_RULE.line}）`,
   );
   L.push(
     "  用法：外应不改【最终极性】的档名。和结论同一边，就说外面的兆头也是这样；方向相反，照上面原书的话把这层拧着的地方说出来，" +
@@ -297,6 +308,8 @@ export interface ExportOptions {
   background?: string | null;
   /** 外应条目 id（选填，见 engine/waiying.ts） */
   waiying?: readonly string[];
+  /** 方卦之应：来问之人站在占者何方（选填） */
+  laiFang?: { gua: string; dir: string } | null;
 }
 
 /** 装配可复制的解读 Prompt。**不调用任何 LLM，纯文本渲染。** */
@@ -327,7 +340,7 @@ export function buildExportPrompt(
     "──────── 本卦盘面与规则（确定性排盘产出，请勿改动一个字）────────\n";
   const disputes = disputeLines(r).join("\n");
   const background = backgroundLines(opts.background, "问卦人").join("\n");
-  const waiying = waiyingLines(r, String(full.final_verdict ?? ""), opts.waiying ?? []).join("\n");
+  const waiying = waiyingLines(r, String(full.final_verdict ?? ""), opts.waiying ?? [], opts.laiFang).join("\n");
   const board = `${head}${facts}\n\n${disputes}` +
     (waiying ? `\n\n${waiying}` : "") + (background ? `\n\n${background}` : "");
   // 追问规矩放最后：截断时先丢它，代价最小
