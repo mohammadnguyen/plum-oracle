@@ -12,6 +12,7 @@ import { buildLiurenPrompt } from "../prompt/buildLiurenPrompt.js";
 import { leixiangOf, TIANJIANG_SOURCE } from "../engine/liuren/tianjiangLeixiang.js";
 import { CALENDAR_LIB } from "../engine/lineage.js";
 import { backgroundCard, el, esc, promptCardBase } from "./shared.js";
+import { castShowLiuren, ritual } from "./ritual.js";
 import { BACKGROUND_MAX } from "../prompt/conversation.js";
 
 export interface LiurenState {
@@ -140,14 +141,21 @@ function screenQuestion(app: HTMLElement, st: LiurenState, rerender: () => void)
     </div>`);
   app.appendChild(tc);
 
-  const go = el(`<button class="primary">起课</button>`);
-  go.onclick = () => {
+  const go = el(`<button class="primary">静心起课</button>`);
+  go.onclick = async () => {
     st.question = ta.value;
     const v = (tc.querySelector("#lr_shi") as HTMLSelectElement).value;
     st.zhanshi = v ? (v as Zhi) : null;
-    st.at = new Date();
+    // 静心页：占时跟此刻的，起课时刻取按满那一刻
+    const at = await ritual({ verb: "起课", question: st.question, timeFromHold: !st.zhanshi });
+    if (!at) return;
+    st.at = at;
+    try {
+      await castShowLiuren(divineLiuren({ at: st.at, zhanshi: st.zhanshi ?? undefined, question: st.question }));
+    } catch { /* 起课失败留给结果页报错 */ }
     st.screen = 2;
     rerender();
+    window.scrollTo(0, 0);
   };
   app.appendChild(go);
 }

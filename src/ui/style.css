@@ -212,3 +212,95 @@ footer.site a { color: var(--accent); }
 .conf.disputed { border-color: var(--xiong); color: var(--xiong); }
 
 .btnrow { margin-top: 10px; }
+
+/* ── 静心起卦 ───────────────────────────────────────────────── */
+body.noscroll { overflow: hidden; }
+.ritual, .castshow {
+  position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+  background: var(--paper); padding: 24px 16px; overflow-y: auto;
+}
+/* 只淡入内容、不淡入底色：动画被节流（后台页、省电模式）时也不会透出底下的页面 */
+.rit-inner, .cs-inner { animation: fadein .35s ease both; }
+.ritual.out, .castshow.out { animation: fadeout .25s ease both; }
+.rit-inner, .cs-inner { max-width: 420px; width: 100%; text-align: center; }
+.breath {
+  width: 120px; height: 120px; margin: 0 auto 22px; border-radius: 50%;
+  border: 1px solid var(--accent); display: flex; align-items: center; justify-content: center;
+  color: var(--accent); font-size: 26px; letter-spacing: 2px;
+  animation: breathe 8s ease-in-out infinite;
+}
+.breath.still { animation: none; }
+.rit-line { font-size: 17px; margin: 0 0 10px; }
+.rit-q { color: var(--ink2); font-size: 15px; margin: 0 0 10px; }
+.rit-quote { color: var(--ink2); font-size: 13.5px; margin: 0 0 24px; }
+.rit-quote small { display: block; font-size: 12px; opacity: .8; }
+button.hold {
+  position: relative; width: 132px; height: 132px; margin: 6px auto 10px; padding: 0;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  text-align: center; font-size: 14.5px; line-height: 1.5; color: var(--accent);
+  border: none; background: transparent; touch-action: none; user-select: none; -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+button.hold svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+button.hold circle { fill: none; stroke-width: 3; }
+button.hold .trk { stroke: var(--line); }
+button.hold .bar { stroke: var(--accent); stroke-linecap: round; }
+button.hold span { transition: transform .2s ease; }
+button.hold.pressing span { transform: scale(.96); }
+button.hold.done .bar { stroke: var(--ji); }
+.rit-hint { color: var(--ink2); font-size: 12.5px; margin: 0 0 14px; }
+.rit-cancel { margin: 0 auto !important; }
+
+/* ── 成卦动画 ───────────────────────────────────────────────── */
+.cs-title { font-size: 22px; letter-spacing: 4px; margin-bottom: 18px; min-height: 34px; }
+.cs-hex { display: inline-block; min-height: 120px; }
+.cs-hex .yao i { height: 10px; }
+.cs-hex .yao.yang i { width: 110px; }
+.cs-hex .yao.yin i { width: 44px; }
+.cs-hex .yao { gap: 22px; margin: 9px 0; }
+.cs-cap { color: var(--ink2); font-size: 14px; margin-top: 16px; min-height: 22px; }
+.cs-skip { position: fixed; bottom: 18px; left: 0; right: 0; text-align: center; color: var(--ink2); font-size: 12px; opacity: .7; }
+.rise { animation: rise .32s ease both; }
+.pulse i { animation: pulse .45s ease-in-out 2 alternate; }
+.flipin { animation: flipin .45s ease both; }
+.ring { position: relative; width: 260px; height: 260px; margin: 0 auto; border: 1px solid var(--line); border-radius: 50%; }
+.ring-di, .ring-tian { position: absolute; inset: 0; }
+.ring-tian { transition: transform 1.6s cubic-bezier(.45, .05, .25, 1); }
+.ring span {
+  position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px;
+  line-height: 26px; text-align: center; font-size: 15px; border-radius: 50%;
+}
+.ring .di { color: var(--ink2); }
+.ring .tian { color: var(--ink); transition: transform 1.6s cubic-bezier(.45, .05, .25, 1); }
+.ring span.hit { color: var(--paper); background: var(--accent); }
+.cs-chuan { display: flex; justify-content: center; gap: 10px; margin-top: 18px; min-height: 44px; flex-wrap: wrap; }
+.cs-chuan .chip { border: 1px solid var(--accent); border-radius: 8px; padding: 4px 12px; font-size: 16px; }
+.cs-chuan .chip small { display: block; font-size: 11.5px; color: var(--ink2); }
+
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
+@keyframes breathe { 0%, 100% { transform: scale(.86); opacity: .75; } 50% { transform: scale(1.06); opacity: 1; } }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes pulse { from { opacity: 1; } to { opacity: .25; } }
+@keyframes flipin { from { opacity: 0; transform: scaleY(.2); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .ritual, .castshow, .rit-inner, .cs-inner, .breath, .rise, .pulse i, .flipin { animation: none !important; }
+  .ring-tian, .ring .tian { transition: none; }
+}
+
+/* ── 指物 · 方位 ────────────────────────────────────────────── */
+.matches { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; }
+.matches button { width: auto; margin: 0; padding: 6px 10px; font-size: 14px; text-align: left; line-height: 1.4; }
+.matches button small { display: block; color: var(--ink2); font-size: 11.5px; }
+.matches button.on { border-color: var(--accent); color: var(--accent); }
+.compass { display: flex; align-items: center; gap: 14px; margin: 10px 0 6px; }
+.dial { position: relative; width: 84px; height: 84px; flex: 0 0 84px; border: 1px solid var(--line); border-radius: 50%; }
+.dial .needle {
+  position: absolute; left: 50%; top: 8px; width: 2px; height: 34px; margin-left: -1px;
+  background: var(--xiong); transform-origin: 50% 34px; transition: transform .2s linear;
+}
+.dial .n { position: absolute; top: -2px; left: 0; right: 0; text-align: center; font-size: 10px; color: var(--ink2); }
+.compass .read { font-size: 15px; }
+.compass .read small { display: block; color: var(--ink2); font-size: 12px; }
+.picked { font-size: 14px; margin-top: 6px; }
+.picked b { color: var(--accent); }

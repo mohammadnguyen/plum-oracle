@@ -15,7 +15,6 @@
 import { divine, type CastResult } from "../engine/result.js";
 import type { CastMethod } from "../engine/cast.js";
 import { DIZHI, COLOR_TO_GUA, declarations } from "../engine/lineage.js";
-import { TRIGRAM_ORDER } from "../engine/gua64.js";
 import { duanshiFull, type DuanshiFull } from "../engine/rules/netassess.js";
 import { allDoors } from "../engine/rules/duanshiLookup.js";
 import { detectMen, MEN_LABEL } from "../engine/rules/menDetect.js";
@@ -23,7 +22,9 @@ import { nowTimeInputs } from "../engine/now.js";
 import { buildExportPrompt } from "../prompt/buildPrompt.js";
 import { corpusInfo } from "../engine/corpus/guayaoci.js";
 import { plainRead } from "./plainRead.js";
-import { backgroundCard, el, esc, copyText, siteHeader, siteFooter } from "./shared.js";
+import { backgroundCard, el, esc, copyText, siteHeader, siteFooter, toast } from "./shared.js";
+import { castShowMeihua, ritual } from "./ritual.js";
+import { initZhiwuState, zhiwuCard, type ZhiwuState } from "./zhiwuCard.js";
 import { BACKGROUND_MAX } from "../prompt/conversation.js";
 import { initLiurenState, renderLiuren, type LiurenState } from "./liuren.js";
 
@@ -48,6 +49,8 @@ interface State {
   question: string;
   /** 问卦人自述的背景（选填，只进导出文本） */
   background: string;
+  /** 指物 · 方位起卦的输入（看到的东西、查到的卦、方位） */
+  zhiwu: ZhiwuState;
   posture: string | null;
   /** 起卦所用时刻取数（默认此刻，可手改） */
   now: ReturnType<typeof nowTimeInputs>;
@@ -60,7 +63,7 @@ const state: State = {
   system: null, liuren: initLiurenState(),
   screen: 1, method: null, methodUi: null, inputs: {},
   men: null, menOverridden: false, menMatched: [], menFallback: true,
-  question: "", background: "", posture: null,
+  question: "", background: "", zhiwu: initZhiwuState(), posture: null,
   now: nowTimeInputs(), timeEdited: false,
   contractMode: "chat", includeFewshot: false,
 };
@@ -260,12 +263,7 @@ function s2(): void {
         <p class="note">报数为后世通行法，原书无此例；本站以物数占（卷一十五）为父法，算法与声音占同构。</p>
       </div>`);
   } else if (ui === "object_direction") {
-    const opts = TRIGRAM_ORDER.map((g) => `<option value="${g}">${g}</option>`).join("");
-    inputCard = el(`
-      <div class="card">
-        <label>所见之物属卦（上卦）</label><select id="f_obj">${opts}</select>
-        <label>方位属卦（下卦）</label><select id="f_dir">${opts}</select>
-      </div>`);
+    inputCard = zhiwuCard(state.zhiwu);
   } else if (ui === "color") {
     const opts = Object.keys(COLOR_TO_GUA)
       .map((x) => `<option value="${x}">${x}（${COLOR_TO_GUA[x]}）</option>`).join("");
@@ -280,11 +278,28 @@ function s2(): void {
   const tc = timeCard(ui === "time");
   app.appendChild(tc);
 
-  const go = el(`<button class="primary">起卦</button>`);
-  go.onclick = () => {
+  const go = el(`<button class="primary">静心起卦</button>`);
+  go.onclick = async () => {
     state.question = ta.value;
     syncMen();
-    const t = (tc as any).__grab() as ReturnType<typeof nowTimeInputs>;
+    if (ui === "object_direction" && (!state.zhiwu.objGua || !state.zhiwu.dirGua)) {
+      toast(!state.zhiwu.objGua ? "先写下你看到的东西，或手选一卦" : "再定一下方位");
+      return;
+    }
+    (inputCard as any)?.__stop?.();
+    // 静心页：此刻起卦法的起卦时刻取按满那一刻（用户手改过时刻的除外）
+    let t = (tc as any).__grab() as ReturnType<typeof nowTimeInputs>;
+    const at = await ritual({
+      verb: "起卦",
+      question: state.question,
+      quote: { text: "不动不占，不因事不占。", from: "《梅花易数》卷一 观梅占（L341）" },
+      timeFromHold: !state.timeEdited,
+    });
+    if (!at) return;
+    if (!state.timeEdited) {
+      state.now = nowTimeInputs(at);
+      t = state.now;
+    }
     const v = (id: string) => (document.getElementById(id) as HTMLInputElement | HTMLSelectElement).value;
     if (ui === "time") {
       state.inputs = {
@@ -294,13 +309,20 @@ function s2(): void {
     } else if (ui === "number") {
       state.inputs = { first_count: Number(v("f_a")), second_count: Number(v("f_b")), hour_dizhi: t.hour_dizhi };
     } else if (ui === "object_direction") {
-      state.inputs = { object_gua: v("f_obj"), direction_gua: v("f_dir"), hour_dizhi: t.hour_dizhi };
+      state.inputs = { object_gua: state.zhiwu.objGua, direction_gua: state.zhiwu.dirGua, hour_dizhi: t.hour_dizhi };
     } else {
       state.inputs = { upper_color: v("f_uc"), lower_color: v("f_lc"), hour_dizhi: t.hour_dizhi };
     }
     state.inputs.__lunar_month = t.lunar_month;   // 旺衰节令用，不入排盘取数
+    // 成卦动画：结果先算定，动画只是把它逐爻画出来
+    try {
+      const castInputs = { ...state.inputs };
+      delete castInputs.__lunar_month;
+      await castShowMeihua(divine(state.method!, castInputs));
+    } catch { /* 输入无效留给结果页报错 */ }
     state.screen = 3;
     render();
+    window.scrollTo(0, 0);
   };
   app.appendChild(go);
 }
@@ -312,7 +334,7 @@ function s3(): void {
   again.onclick = () => {
     Object.assign(state, {
       screen: 1, method: null, methodUi: null, inputs: {},
-      menOverridden: false, timeEdited: false, now: nowTimeInputs(),
+      menOverridden: false, timeEdited: false, now: nowTimeInputs(), zhiwu: initZhiwuState(),
     });
     render();
   };
@@ -350,6 +372,10 @@ function s3(): void {
   }
   if (state.background.trim()) {
     app.appendChild(el(`<div class="card note">📝 你补充的情况已附在下方复制文本里（只作情境，不影响盘面）。</div>`));
+  }
+  if (state.method === "object_direction" && state.zhiwu.objGua) {
+    app.appendChild(el(`<div class="card note">🧭 上卦 ${esc(state.zhiwu.objGua)}：${esc(state.zhiwu.objText.trim() && state.zhiwu.objNote !== "按原书条目手选" ? `所见「${state.zhiwu.objText.trim()}」→ ` : "")}${esc(state.zhiwu.objNote)}<br />
+      下卦 ${esc(state.zhiwu.dirGua ?? "")}：${esc(state.zhiwu.dirNote)}</div>`));
   }
 
   app.appendChild(menCard());
