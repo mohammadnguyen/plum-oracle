@@ -9,6 +9,7 @@ import { divineLiuren, sikeLabels, type LiurenResult } from "../engine/liuren/re
 import { DIZHI, type Zhi } from "../engine/liuren/ganzhi.js";
 import { TIANJIANG } from "../engine/liuren/tianjiang.js";
 import { buildLiurenPrompt } from "../prompt/buildLiurenPrompt.js";
+import { leixiangOf, TIANJIANG_SOURCE } from "../engine/liuren/tianjiangLeixiang.js";
 import { CALENDAR_LIB } from "../engine/lineage.js";
 import { el, esc, promptCardBase } from "./shared.js";
 
@@ -221,6 +222,18 @@ function chainCard(r: LiurenResult): HTMLElement {
     ${r.tianjiang.derivation.map((x) => kv(x)).join("")}
   </details>`);
 
+  const lxSeen = new Set<string>();
+  const lx = r.chuanDetail
+    .map((c) => c.jiang)
+    .filter((j) => (lxSeen.has(j) ? false : (lxSeen.add(j), true)))
+    .map((j) => leixiangOf(j))
+    .filter((x): x is NonNullable<typeof x> => !!x);
+  parts.push(`<details><summary>天将类象（《${TIANJIANG_SOURCE.book}》原句）</summary>
+    ${lx.map((x) => kv(`${x.jiang}：「${x.text}」`)).join("")}
+    <div class="kv" style="color:var(--ink2)">录自${esc(TIANJIANG_SOURCE.section)}，${esc(TIANJIANG_SOURCE.edition)}，原书无标点，照录。
+      <a href="${esc(TIANJIANG_SOURCE.url)}" target="_blank" rel="noopener">查看原文</a>（${esc(TIANJIANG_SOURCE.status)}）</div>
+  </details>`);
+
   parts.push(`<details><summary>门派分歧（并列提示，不替你裁决）</summary>
     ${r.disputes.map((d) => kv(d)).join("")}
   </details>`);
@@ -238,7 +251,7 @@ function promptCard(r: LiurenResult, st: LiurenState): HTMLElement {
   const extra = el(`
     <details style="margin-top:8px">
       <summary>解读风格：<span class="modename"></span></summary>
-      <label><input type="radio" name="lr_mode" value="chat" style="width:auto" /> <b>聊天版</b>（默认）——像懂六壬的朋友当面帮你分析：先说走向，再讲怎么发展、哪里要小心、怎么做；少术语</label>
+      <label><input type="radio" name="lr_mode" value="chat" style="width:auto" /> <b>聊天版</b>（默认）——像懂大六壬的朋友当面帮你分析：先说走向，再讲怎么发展、哪里要小心、怎么做；少术语</label>
       <label><input type="radio" name="lr_mode" value="plain" style="width:auto" /> <b>详解版</b>——逐步讲起课来由，每段标出依据，适合想核对推理的人</label>
     </details>`);
   const card = promptCardBase({

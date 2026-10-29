@@ -13,6 +13,8 @@ import { LIUREN_REQUIREMENTS } from "../src/prompt/liurenRequirements.js";
 import { LIUREN_CHAT_REQUIREMENTS } from "../src/prompt/liurenChatRequirements.js";
 import { PLAIN_REQUIREMENTS } from "../src/prompt/plainRequirements.js";
 import { DIZHI } from "../src/engine/liuren/ganzhi.js";
+import { TIANJIANG } from "../src/engine/liuren/tianjiang.js";
+import { TIANJIANG_LEIXIANG, TIANJIANG_SOURCE } from "../src/engine/liuren/tianjiangLeixiang.js";
 
 const AT = new Date(2026, 9, 28, 22, 7);
 const build = (q?: string) =>
@@ -150,6 +152,13 @@ describe("六壬聊天版（默认导出，2026-10-29）", () => {
     expect(out.full).toContain(LIUREN_REQUIREMENTS);
   });
 
+  it("写明是大六壬，不让用户的 AI 混进小六壬、六壬金口诀的说法", () => {
+    // 三套共用天将等名目；导出文本原先只写「懂六壬」，盘面上也没有「大六壬」三个字
+    expect(C).toContain("这是大六壬（不是小六壬，也不是六壬金口诀）");
+    expect(C).toContain("那两套的说法一概不混进来");
+    expect(LIUREN_REQUIREMENTS).toContain("大六壬");
+  });
+
   it("六壬不出吉凶档：结论用走向说，且走向只能从三传帮压与空亡来", () => {
     expect(C.includes("最终极性")).toBe(false);
     expect(C).toContain("本课没有现成的吉凶档");
@@ -252,6 +261,66 @@ describe("六壬聊天版（默认导出，2026-10-29）", () => {
     ]) {
       expect(C.includes(leak), `六壬聊天版含试解课内容「${leak}」`).toBe(false);
     }
+  });
+});
+
+describe("十二天将类象表（《六壬大全》卷二原句）", () => {
+  it("十二位齐全，与引擎天将一一对应，每位一句", () => {
+    expect(TIANJIANG_LEIXIANG.map((x) => x.jiang).sort()).toEqual([...TIANJIANG].sort());
+  });
+
+  it("每句都是本将的「主」句：以原书写法开头，含「主」，无标点，带页码", () => {
+    for (const x of TIANJIANG_LEIXIANG) {
+      const head = x.nameInSource === "螣蛇" ? "蛇" : x.nameInSource;
+      expect(x.text.startsWith(head), `${x.jiang} 不以「${head}」开头`).toBe(true);
+      expect(/主|之神/.test(x.text), `${x.jiang} 不是主事句`).toBe(true);
+      expect(/[，。、；：！？「」]/.test(x.text), `${x.jiang} 被加了标点`).toBe(false);
+      expect(x.page).toMatch(/^KR3g0031_WYG_002-\d+[ab]$/);
+    }
+  });
+
+  it("不收现成的吉凶断语（吉將也／凶將也、其戾主）", () => {
+    for (const x of TIANJIANG_LEIXIANG) {
+      for (const bad of ["吉將也", "凶將也", "吉将也", "凶将也", "其戾"]) {
+        expect(x.text.includes(bad), `${x.jiang} 含「${bad}」`).toBe(false);
+      }
+    }
+  });
+
+  it("出处钉死到具体提交，状态如实写明未经人工签收", () => {
+    expect(TIANJIANG_SOURCE.commit).toMatch(/^[0-9a-f]{40}$/);
+    expect(TIANJIANG_SOURCE.url).toContain(TIANJIANG_SOURCE.commit);
+    expect(TIANJIANG_SOURCE.status).toContain("未经人工签收");
+  });
+
+  it("导出只附三传所乘天将，去重，原句逐字带进去", () => {
+    for (const zs of DIZHI) {
+      const rr = divineLiuren({ at: new Date(2026, 3, 9, 12), zhanshi: zs });
+      const { facts } = buildLiurenPrompt(rr);
+      const want = [...new Set(rr.chuanDetail.map((c) => c.jiang))];
+      expect(facts).toContain("【天将类象·有出处】");
+      expect(facts).toContain(TIANJIANG_SOURCE.url);
+      for (const j of want) {
+        const x = TIANJIANG_LEIXIANG.find((e) => e.jiang === j)!;
+        expect(facts).toContain(`  · ${j}：「${x.text}」`);
+      }
+      const listed = facts.split("\n").filter((l) => /^  · \S{2}：「/.test(l)).length;
+      expect(listed).toBe(want.length);
+    }
+  });
+
+  it("两版要求都把天将含义限定在表里的原句", () => {
+    expect(LIUREN_CHAT_REQUIREMENTS).toContain("天将的含义只用盘面【天将类象·有出处】里的原句");
+    expect(LIUREN_CHAT_REQUIREMENTS).toContain("不只挑最好听的");
+    expect(LIUREN_CHAT_REQUIREMENTS).toContain("凭记忆的一概不说");
+    expect(LIUREN_REQUIREMENTS).toContain("天将的含义只用盘面【天将类象·有出处】的原句");
+    // 附表试解后的小修
+    expect(LIUREN_CHAT_REQUIREMENTS).toContain("只在第一次引天将时说一句");
+    expect(LIUREN_CHAT_REQUIREMENTS).toContain("「如果碰到」这个条件不省掉");
+    expect(LIUREN_CHAT_REQUIREMENTS).toContain("「始终」「一直」");
+    expect(LIUREN_CHAT_REQUIREMENTS).toContain("如果按另一种算法，这一课的白天黑夜归属不同");
+    expect(LIUREN_CHAT_REQUIREMENTS).toContain("返吟只说事情这一路来回反复");
+    expect(LIUREN_CHAT_REQUIREMENTS).toContain("三处有压、没有一处帮他的，说偏难");
   });
 });
 

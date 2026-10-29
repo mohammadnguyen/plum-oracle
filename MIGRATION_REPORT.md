@@ -220,3 +220,12 @@ python web/tests/fixtures/gen_prompt_parity.py
   定点复测后补的一条未再试解。
 
 测试 102 → 111 条。
+
+### 九之三、同日追加：十二天将类象表
+
+- 新增 `src/engine/liuren/tianjiangLeixiang.ts`：《六壬大全》卷二四库本，每将一句主事类象，
+  钉死在 kanripo/KR3g0031@320cbc1。新增 `scripts/verify-tianjiang.ts`（`npm run verify:tianjiang`），
+  联网取原文逐字核对，12/12 通过。未经人工签收（用户决定）。
+- 六壬导出附【天将类象·有出处】（只列三传所乘天将）；两版六壬要求改为只许逐字截取表中原句。
+- 两版六壬要求明写「这是大六壬（不是小六壬，也不是六壬金口诀）」。
+

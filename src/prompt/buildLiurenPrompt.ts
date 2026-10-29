@@ -13,6 +13,7 @@ import { sikeLabels, type LiurenResult } from "../engine/liuren/result.js";
 import { LIUREN_REQUIREMENTS } from "./liurenRequirements.js";
 import { LIUREN_CHAT_REQUIREMENTS } from "./liurenChatRequirements.js";
 import { CALENDAR_LIB } from "../engine/lineage.js";
+import { leixiangOf, TIANJIANG_SOURCE } from "../engine/liuren/tianjiangLeixiang.js";
 
 const CONF_CN: Readonly<Record<string, string>> = Object.freeze({
   confirmed: "已与两家独立排盘实现逐传核过",
@@ -53,6 +54,24 @@ export function liurenFactLines(r: LiurenResult): string[] {
       `  ${c.pos}传 ${c.dun ?? "（旬空无遁干）"}${c.zhi}（${c.wuxing}）` +
       `　乘${c.jiang}${c.kong ? "　【空亡】" : ""}　与日干：${c.relToGan}`,
     );
+  }
+
+  // 天将类象：只列三传所乘的那几位，按出现顺序去重。原文逐字照录（无标点），带页码与钉死的出处。
+  const seen = new Set<string>();
+  const lx = r.chuanDetail
+    .map((c) => c.jiang)
+    .filter((j) => (seen.has(j) ? false : (seen.add(j), true)))
+    .map((j) => leixiangOf(j))
+    .filter((x): x is NonNullable<typeof x> => !!x);
+  if (lx.length) {
+    const S = TIANJIANG_SOURCE;
+    L.push(
+      `【天将类象·有出处】三传所乘天将的主事类象，录自《${S.book}》${S.section}（${S.edition}；` +
+      `原书无标点，照录）。出处：${S.url}`,
+    );
+    for (const x of lx) {
+      L.push(`  · ${x.jiang}：「${x.text}」（${x.page.replace(/^KR3g0031_WYG_002-/, "卷二第")}页）`);
+    }
   }
 
   L.push(
