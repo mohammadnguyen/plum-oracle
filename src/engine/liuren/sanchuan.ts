@@ -309,8 +309,8 @@ function fuyinZhongMo(chu: Zhi, sike: SiKe): { zhong: Zhi; mo: Zhi; steps: strin
 /** 伏吟课：天地盘重叠。 */
 function fuyinSanchuan(sike: SiKe, plate: PlatePair, dayGanZhi: string): SanchuanResult {
   const steps = ["月将与占时同支，天地盘重叠，为伏吟课"];
-  const zei = sike.ke.filter((k) => k.xiaZeiShang);
-  const kelist = sike.ke.filter((k) => k.shangKeXia);
+  const zei = sike.keEff.filter((k) => k.xiaZeiShang);
+  const kelist = sike.keEff.filter((k) => k.shangKeXia);
   let chu: Zhi;
   let keti: string;
   const altNotes: string[] = [];
@@ -351,8 +351,8 @@ function fuyinSanchuan(sike: SiKe, plate: PlatePair, dayGanZhi: string): Sanchua
 /** 返吟课：天地盘对冲。 */
 function fanyinSanchuan(sike: SiKe, plate: PlatePair, dayGanZhi: string): SanchuanResult {
   const steps = ["月将与占时相冲，天地盘对冲，为返吟课"];
-  const zei = sike.ke.filter((k) => k.xiaZeiShang);
-  const kelist = sike.ke.filter((k) => k.shangKeXia);
+  const zei = sike.keEff.filter((k) => k.xiaZeiShang);
+  const kelist = sike.keEff.filter((k) => k.shangKeXia);
   const cands = zei.length ? zei : kelist;
 
   if (cands.length) {
@@ -432,10 +432,26 @@ function yaokeOf(sike: SiKe): { chu: Zhi; useHao: boolean; steps: string[] } | n
  * 主入口：由四课与天地盘求三传。
  * 并列各说若在本盘取出不同的三传（`altNotes` 非空），本盘的把握程度一律降为 disputed。
  */
+/**
+ * 卷十毕法赋第九十三条一说（2026-10-29）：与第一课同位的第二、四课应并入第一课、以日干论克。
+ * 它批评的正是通行取法，本软件取通行法（见 plate.ts buildSiKe）；按此说取出不同三传时，并列写明。
+ */
+export const BIFA93_ALT =
+  "《六壬大全》卷十毕法赋第九十三条另一说：与第一课同位的那一课应并入第一课、以日干论克" +
+  "（原书「辛酉日干上亥既是辛日豈可便以亥加戌為初傳乎」，并斥之为「時師起三傳尚有錯誤」；" +
+  "本软件依通行取法不并；卷一别责之数「戊辰戊午丙辰三剛日各一課辛未二課辛丑二課丁酉辛酉各一課」共九课，亦只在不并时成立）";
+
 export function deriveSanchuan(
   sike: SiKe, plate: PlatePair, dayGanZhi: string,
 ): SanchuanResult {
   const r = deriveSanchuanByRule(sike, plate, dayGanZhi);
+  if (sike.keMerged.length !== sike.keEff.length) {
+    const alt = deriveSanchuanByRule({ ...sike, keEff: sike.keMerged }, plate, dayGanZhi);
+    const a = alt.chuan.map((c) => c.zhi) as [Zhi, Zhi, Zhi];
+    if (a.join("") !== r.chuan.map((c) => c.zhi).join("")) {
+      r.altNotes = [...r.altNotes, altNote(BIFA93_ALT, a)];
+    }
+  }
   return r.altNotes.length ? { ...r, confidence: "disputed" } : r;
 }
 
@@ -446,8 +462,8 @@ function deriveSanchuanByRule(
   if (plate.fanyin) return fanyinSanchuan(sike, plate, dayGanZhi);
 
   const steps: string[] = [];
-  const zei = sike.ke.filter((k) => k.xiaZeiShang);
-  const kelist = sike.ke.filter((k) => k.shangKeXia);
+  const zei = sike.keEff.filter((k) => k.xiaZeiShang);
+  const kelist = sike.keEff.filter((k) => k.shangKeXia);
 
   // ── 一、贼克法 ──────────────────────────────────────────────────────
   if (zei.length || kelist.length) {

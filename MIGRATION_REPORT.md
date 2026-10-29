@@ -229,6 +229,13 @@ python web/tests/fixtures/gen_prompt_parity.py
 - 六壬导出附【天将类象·有出处】（只列三传所乘天将）；两版六壬要求改为只许逐字截取表中原句。
 - 两版六壬要求明写「这是大六壬（不是小六壬，也不是六壬金口诀）」。
 
+### 九之十一、同日追加：壬癸贵人默认、四课重复（宪法 §0.3 ⑮）
+
+- `tianjiang.ts`：壬癸日贵人默认改「昼巳夜卯」（卷九 4b 明文 + 毕法赋课例），旧说并列。
+- `plate.ts`：`keEff`（重复课只算一次，与第一课同位者不并）、`keMerged`（第九十三条一说）；
+  `sanchuan.ts` 取克改用 `keEff`，并列 `BIFA93_ALT`。720 课三传不变，课体名更正 24 课，四盘新增并列一说。
+- `tests/liuren-book.test.ts` 加 3 条；毕法赋回归夹具 415 例。
+
 ### 九之十、同日追加：六壬毕法赋（宪法 §0.3 ⑭）
 
 - `src/engine/liuren/bifa.ts`（46 条主格判定）、`bifaData.ts`（赋文与定义原句，脚本生成）；`result.ts` 带 `bifa`。

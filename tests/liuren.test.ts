@@ -267,14 +267,15 @@ describe("十二天将", () => {
         }
       }
     }
-    // 壬癸两说实测确认：本软件昼卯夜巳；dcbazi 排盘站昼巳夜卯
+    // 壬癸两说：本软件默认昼巳夜卯（2026-10-29 起，依《六壬大全》卷九 4b 明文与毕法赋课例；dcbazi 排盘站同）；另一说昼卯夜巳
     expect(buildTianjiang("壬", true, p, { geng: "同甲戊", rengui: "昼卯夜巳" }).guirenZhi).toBe("卯");
     expect(buildTianjiang("壬", true, p, { geng: "同甲戊", rengui: "昼巳夜卯" }).guirenZhi).toBe("巳");
     // 不受分歧影响的几干：甲昼丑夜未、辛昼午夜寅
     expect(buildTianjiang("甲", true, p).guirenZhi).toBe("丑");
     expect(buildTianjiang("甲", false, p).guirenZhi).toBe("未");
     expect(buildTianjiang("辛", true, p).guirenZhi).toBe("午");
-    expect(buildTianjiang("壬", true, p).guirenZhi).toBe("卯");
+    expect(buildTianjiang("壬", true, p).guirenZhi).toBe("巳");
+    expect(buildTianjiang("癸", false, p).guirenZhi).toBe("卯");
   });
 });
 

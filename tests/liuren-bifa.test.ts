@@ -2,7 +2,7 @@
  * 大六壬 · 毕法赋判定（src/engine/liuren/bifa.ts）。
  *
  * 夹具 tests/fixtures/bifa_book_cases.json：原书卷九、卷十注文自举的课例里，本引擎能起出同一盘、
- * 且判定与原书一致的 409 例（开发期由脚本逐例核过）。这里锁住它们，防日后改动把已对上的弄坏。
+ * 且判定与原书一致的各例（开发期由脚本逐例核过，2026-10-29 为 415 例）。这里锁住它们，防日后改动把已对上的弄坏。
  * 对不上的例子不在夹具里，原因逐条记在 CLAUDE.md §0.3 ⑭：子格未收、壬癸贵人昼夜、涉害取法、方局未收。
  */
 import { describe, it, expect } from "vitest";
@@ -51,7 +51,7 @@ describe("毕法赋表", () => {
   });
 });
 
-describe("原书自举课例（409 例回归）", () => {
+describe("原书自举课例（回归夹具）", () => {
   it("夹具里每一例：该条照原书成立（或照原书不成立）", () => {
     let n = 0;
     for (const c of cases as Array<{ n: number; day: string; tian: Zhi; di: Zhi; zhouye: string | null; benming: Zhi | null; want: boolean }>) {
@@ -60,7 +60,7 @@ describe("原书自举课例（409 例回归）", () => {
       expect(got, `第${c.n}条 ${c.day} ${c.tian}加${c.di}`).toBe(c.want);
       n++;
     }
-    expect(n).toBe(409);
+    expect(n).toBe((cases as unknown[]).length);
   });
 
   it("几条原书明说的：魁度天门（戌加亥发用）、罡塞鬼户（辰加寅）", () => {

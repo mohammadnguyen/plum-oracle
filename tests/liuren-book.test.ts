@@ -13,7 +13,7 @@ import { JIAZI, DIZHI, type Gan, type Zhi } from "../src/engine/liuren/ganzhi.js
 import { buildPlate, buildSiKe } from "../src/engine/liuren/plate.js";
 import {
   deriveSanchuan, isBazhuan, shehaiDepth,
-  BAZHUAN_ALT_YAOKE, SHEHAI_ALT_BIYONG, SHEHAI_ALT_MENGZHONG,
+  BAZHUAN_ALT_YAOKE, BIFA93_ALT, SHEHAI_ALT_BIYONG, SHEHAI_ALT_MENGZHONG,
 } from "../src/engine/liuren/sanchuan.js";
 
 /** 天盘某支加地盘某支（即月将加占时）。 */
@@ -169,5 +169,37 @@ describe("八专（卷五 38a–42a）", () => {
   it("独足只给三传同归一神的那几课", () => {
     expect(ke("己未", "酉", "未").sc.keti).toBe("八专课·独足");
     expect(ke("甲寅", "丑", "辰").sc.keti).toBe("八专课");
+  });
+});
+
+describe("四课重复（2026-10-29，CLAUDE.md §0.3 ⑮）", () => {
+  it("上下两神全同的重复课只算一次：庚子日辰加子二、三课同为辰/子，原书作元首（卷九毕法赋第三十五条课例）", () => {
+    const r = ke("庚子", "辰", "子");
+    expect(r.chuan).toBe("辰申子");
+    expect(r.sc.keti).toBe("元首课");
+  });
+
+  it("与第一课同位的课依通行法不并；卷十第九十三条点名的四盘，并列「并入第一课」一说", () => {
+    // 原书：辛酉日干上亥、乙酉日亥加辰、乙巳日干上卯「豈可便以……為初傳乎」，戊寅日「第四課申加巳有尅」
+    const cases: Array<[string, string, string, string]> = [
+      ["辛酉", "亥", "戌", "亥子丑"],   // 干上亥 = 亥加辛寄宫戌
+      ["乙酉", "亥", "辰", "亥午丑"],
+      ["乙巳", "卯", "辰", "卯寅丑"],   // 干上卯 = 卯加乙寄宫辰
+      ["戊寅", "巳", "寅", "申亥寅"],   // 第四课申加巳：支上巳
+    ];
+    for (const [day, t, d, tongxing] of cases) {
+      const r = ke(day, t, d);
+      expect(r.chuan, day).toBe(tongxing);
+      const note = r.sc.altNotes.find((n) => n.startsWith(BIFA93_ALT));
+      expect(note, `${day} 应并列第九十三条一说`).toBeTruthy();
+      expect(note!.includes(`三传 ${tongxing.split("").join("→")}`), `${day} 另一说不该与本法同`).toBe(false);
+      expect(r.sc.confidence).toBe("disputed");
+    }
+  });
+
+  it("通行法下别责共九课，与卷一「戊辰戊午丙辰三剛日各一課辛未二課辛丑二課丁酉辛酉各一課」相合", () => {
+    let n = 0;
+    for (const gz of JIAZI) for (const t of DIZHI) if (ke(gz, t, "子").sc.gate === "别责") n++;
+    expect(n).toBe(9);
   });
 });

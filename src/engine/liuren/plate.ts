@@ -84,6 +84,14 @@ export interface SiKe {
   bubei: boolean;
   /** 去重后的课数 */
   distinct: number;
+  /**
+   * 去重后的课，取克用这一份（2026-10-29）。上下两神全同的重复课只算一次（书中「四課不全」「三課不備」
+   * 的通例；庚子日辰加子二、三课同为辰/子，原书作元首而非涉害）。与第一课同位的课不并，理由见 buildSiKe。
+   * 见 CLAUDE.md §0.3 ⑮。
+   */
+  keEff: Ke[];
+  /** 卷十第九十三条一说：与第一课同位的第二、四课也并入第一课（只用于并列，不用于本法取传） */
+  keMerged: Ke[];
 }
 
 import { ke as wuxingKe } from "./ganzhi.js";
@@ -121,14 +129,21 @@ export function buildSiKe(plate: PlatePair, gan: Gan, zhi: Zhi): SiKe {
 
   // 四课不备：按「上下两神」的组合去重（第一课以寄宫代干参与比对，
   // 因为重复与否看的是盘上位置，不是五行）。
-  const sig = new Set([
-    `${k1Shang}|${jigong}`, `${k2Shang}|${k1Shang}`,
-    `${k3Shang}|${zhi}`, `${k4Shang}|${k3Shang}`,
-  ]);
+  const sigs = [`${k1Shang}|${jigong}`, `${k2Shang}|${k1Shang}`, `${k3Shang}|${zhi}`, `${k4Shang}|${k3Shang}`];
+  const sig = new Set(sigs);
+  // 只并「与第一课以外的课同位」的重复课（上下两神全同，如庚子日辰加子二三课同为辰/子）。
+  // 与第一课同位的课不并：第一课下神是日干，与以地支论的课本就不同——
+  //   · 第三课：八专日干支同位，卷五「八專日有五除癸丑日俱有克」只有干、支分论才成立；
+  //   · 第二、四课：卷十毕法赋第九十三条主张并入第一课、以日干论（「辛酉日干上亥……豈可便以亥加戌為初傳乎」），
+  //     但它批评的正是「時師」通行的取法，卷一「六别責法……共九課」的数目也只在不并时成立。
+  //     本软件取通行法，第九十三条一说在 sanchuan.ts 并列（altNotes），见 CLAUDE.md §0.3 ⑮。
+  const keEff = ke.filter((_, i) => !sigs.some((s, j) => j > 0 && j < i && s === sigs[i]));
+  // 第九十三条一说用：与第一课同位的课一并并入第一课
+  const keMerged = ke.filter((_, i) => !sigs.some((s, j) => j < i && s === sigs[i] && !(i === 2 && j === 0)));
   return {
     ke, gan, zhi, jigong,
     ganShang: k1Shang, zhiShang: k3Shang,
-    bubei: sig.size < 4, distinct: sig.size,
+    bubei: sig.size < 4, distinct: sig.size, keEff, keMerged,
   };
 }
 
