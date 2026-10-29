@@ -13,6 +13,7 @@ import { leixiangOf, TIANJIANG_SOURCE } from "../engine/liuren/tianjiangLeixiang
 import { CALENDAR_LIB } from "../engine/lineage.js";
 import { backgroundCard, el, esc, promptCardBase } from "./shared.js";
 import { castShowLiuren, ritual } from "./ritual.js";
+import { SEASON_NAME, statesLine } from "../engine/liuren/wangxiang.js";
 import { BACKGROUND_MAX } from "../prompt/conversation.js";
 
 export interface LiurenState {
@@ -100,10 +101,13 @@ function chuanRow(r: LiurenResult): HTMLElement {
       <span class="cp">${esc(c.pos)}传</span>
       <span class="cz">${esc(c.dun ?? "〇")}${esc(c.zhi)}</span>
       <span class="cj">${esc(c.jiang)}</span>
-      <span class="cr">${esc(c.relToGan)}</span>
+      <span class="cr">${esc(c.relToGan)} · ${esc(c.liuqin)} · ${esc(c.qi)}</span>
       ${c.kong ? '<span class="ck">空亡</span>' : ""}
     </div>`);
-  return el(`<div class="chuan">${rows.join("")}</div>`);
+  const wx = r.wangxiang;
+  return el(`<div class="chuan">${rows.join("")}
+    <div class="note" style="margin-top:6px">月建 ${esc(wx.yuejian)}，${esc(SEASON_NAME[wx.season])}：${esc(statesLine(wx.states))}；日干 ${esc(r.input.gan)}：${esc(r.ganQi)}。
+      旺相休囚、六亲均按《六壬大全》卷五、卷七、卷八原文（机器逐字核对，未经人工签收）。</div></div>`);
 }
 
 /** 屏1：所问 + 占时。 */

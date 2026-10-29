@@ -20,6 +20,7 @@ import { getYaoci, type YaociInfo } from "../engine/corpus/guayaoci.js";
 import { PLAIN_REQUIREMENTS } from "./plainRequirements.js";
 import { CHAT_REQUIREMENTS } from "./chatRequirements.js";
 import { backgroundLines, FOLLOWUP_MEIHUA } from "./conversation.js";
+import { readWaiying, SHIYING_RULE, WAIYING_FILE } from "../engine/waiying.js";
 
 const C = contract as { DUANSHI_APPENDIX: string; KOUWEN_FEWSHOT: string; SELF_CHECKLIST: string };
 
@@ -227,6 +228,39 @@ export function disputeLines(r: CastResult): string[] {
   ];
 }
 
+/** 外应与体的关系，换成不会读反的说法（relate 的「体生」指体生外应）。 */
+const WAIYING_REL: Readonly<Record<string, string>> = Object.freeze({
+  生体: "外应生体", 比和: "外应与体比和", 体克: "体克外应", 体生: "体生外应（泄）", 克体: "外应克体",
+});
+
+/**
+ * 外应节（程序判定，不在 facts 内）。没选外应返回空数组。
+ * 外应即一个「用」，吉凶用已签收的体用生克表；内外合断只摆原书 L1007 的原话，不改最终极性。
+ */
+export function waiyingLines(r: CastResult, finalVerdict: string, ids: readonly string[]): string[] {
+  const w = readWaiying(ids, r.ti_wuxing, finalVerdict);
+  if (!w) return [];
+  const L = [
+    `【外应（起卦时问卦人身边的所见所闻；程序按原书十应「论卦象」一路对卦，「${SHIYING_RULE.asYong}」）】`,
+  ];
+  for (const h of w.hits) {
+    const x = h.entry;
+    L.push(
+      `  · ${x.label} → ${x.gua.length ? `${x.gua.join("、")}（${x.wuxing}）` : `${x.wuxing}`}：原书「${x.quote}」` +
+      `（${x.section}·L${x.line}）。与体 ${r.ti}（${r.ti_wuxing}）：${WAIYING_REL[h.rel]}（${h.tone}）`,
+    );
+  }
+  L.push(
+    `  外应合起来：${w.wai}；本盘最终极性在${w.nei}的一边。原书十应目论：` +
+    w.rule.map((s) => `「${s}」`).join("") + `（${WAIYING_FILE} L${SHIYING_RULE.line}）`,
+  );
+  L.push(
+    "  用法：外应不改【最终极性】的档名。和结论同一边，就说外面的兆头也是这样；方向相反，照上面原书的话把这层拧着的地方说出来，" +
+    "不替问卦人判哪边压过哪边。外应只用这里列的，不从所问原话或背景里另找；原书「不论卦象」的那类外应（鸦、鹊之类直断吉凶的）本站不收，不要自己加。",
+  );
+  return L;
+}
+
 export interface ExportedPrompt {
   /** 第一段：盘面与规则（确定性事实）。**不可替代**——别处拿不到。 */
   facts: string;
@@ -234,7 +268,9 @@ export interface ExportedPrompt {
   disputes: string;
   /** 问卦人自述的背景节（没写背景为空串；不在 facts 内，见 conversation.ts） */
   background: string;
-  /** 盘面全部：facts + 门派分歧 + 背景。「只复制盘面」复制的是这个 */
+  /** 外应节（没选外应为空串；不在 facts 内） */
+  waiying: string;
+  /** 盘面全部：facts + 门派分歧 + 外应 + 背景。「只复制盘面」复制的是这个 */
   board: string;
   /** 追问规矩，附在每种导出的最后（见 conversation.ts） */
   followup: string;
@@ -259,6 +295,8 @@ export interface ExportOptions {
   question?: string | null;
   /** 问卦人自述的背景（选填；只作情境，见 conversation.ts） */
   background?: string | null;
+  /** 外应条目 id（选填，见 engine/waiying.ts） */
+  waiying?: readonly string[];
 }
 
 /** 装配可复制的解读 Prompt。**不调用任何 LLM，纯文本渲染。** */
@@ -289,13 +327,16 @@ export function buildExportPrompt(
     "──────── 本卦盘面与规则（确定性排盘产出，请勿改动一个字）────────\n";
   const disputes = disputeLines(r).join("\n");
   const background = backgroundLines(opts.background, "问卦人").join("\n");
-  const board = `${head}${facts}\n\n${disputes}` + (background ? `\n\n${background}` : "");
+  const waiying = waiyingLines(r, String(full.final_verdict ?? ""), opts.waiying ?? []).join("\n");
+  const board = `${head}${facts}\n\n${disputes}` +
+    (waiying ? `\n\n${waiying}` : "") + (background ? `\n\n${background}` : "");
   // 追问规矩放最后：截断时先丢它，代价最小
   const tail = `\n\n${FOLLOWUP_MEIHUA}`;
   return {
     facts,
     disputes,
     background,
+    waiying,
     board,
     followup: FOLLOWUP_MEIHUA,
     contract: contractText,

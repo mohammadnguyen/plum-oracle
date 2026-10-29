@@ -25,6 +25,8 @@ import { plainRead } from "./plainRead.js";
 import { backgroundCard, el, esc, copyText, siteHeader, siteFooter, toast } from "./shared.js";
 import { castShowMeihua, ritual } from "./ritual.js";
 import { initZhiwuState, zhiwuCard, type ZhiwuState } from "./zhiwuCard.js";
+import { waiyingCard } from "./waiyingCard.js";
+import { readWaiying } from "../engine/waiying.js";
 import { BACKGROUND_MAX } from "../prompt/conversation.js";
 import { initLiurenState, renderLiuren, type LiurenState } from "./liuren.js";
 
@@ -51,6 +53,8 @@ interface State {
   background: string;
   /** 指物 · 方位起卦的输入（看到的东西、查到的卦、方位） */
   zhiwu: ZhiwuState;
+  /** 外应条目 id（选填，见 engine/waiying.ts） */
+  waiying: string[];
   posture: string | null;
   /** 起卦所用时刻取数（默认此刻，可手改） */
   now: ReturnType<typeof nowTimeInputs>;
@@ -63,7 +67,7 @@ const state: State = {
   system: null, liuren: initLiurenState(),
   screen: 1, method: null, methodUi: null, inputs: {},
   men: null, menOverridden: false, menMatched: [], menFallback: true,
-  question: "", background: "", zhiwu: initZhiwuState(), posture: null,
+  question: "", background: "", zhiwu: initZhiwuState(), waiying: [], posture: null,
   now: nowTimeInputs(), timeEdited: false,
   contractMode: "chat", includeFewshot: false,
 };
@@ -250,6 +254,7 @@ function s2(): void {
     paintMen();
   };
   app.appendChild(backgroundCard(state.background, BACKGROUND_MAX, (v) => { state.background = v; }));
+  app.appendChild(waiyingCard(state.waiying));
 
   // 起卦必需输入（只有确实非用户不可的那些）
   let inputCard: HTMLElement | null = null;
@@ -334,7 +339,7 @@ function s3(): void {
   again.onclick = () => {
     Object.assign(state, {
       screen: 1, method: null, methodUi: null, inputs: {},
-      menOverridden: false, timeEdited: false, now: nowTimeInputs(), zhiwu: initZhiwuState(),
+      menOverridden: false, timeEdited: false, now: nowTimeInputs(), zhiwu: initZhiwuState(), waiying: [],
     });
     render();
   };
@@ -378,6 +383,13 @@ function s3(): void {
       下卦 ${esc(state.zhiwu.dirGua ?? "")}：${esc(state.zhiwu.dirNote)}</div>`));
   }
 
+  const wy = readWaiying(state.waiying, r.ti_wuxing, String(full.final_verdict ?? ""));
+  if (wy) {
+    const rows = wy.hits.map((h) =>
+      `${esc(h.entry.label)} → ${esc(h.entry.gua.join("、") || h.entry.wuxing)}（${esc(h.entry.wuxing)}）：${esc(h.rel)}，${esc(h.tone)}`).join("<br />");
+    app.appendChild(el(`<div class="card note">👁 外应：<br />${rows}<br />外应合起来${esc(wy.wai)}，本卦在${esc(wy.nei)}的一边。
+      原书：「${wy.rule.map(esc).join("」「")}」（十应目论）。外应不改吉凶档，已附在复制文本里。</div>`));
+  }
   app.appendChild(menCard());
   app.appendChild(plainCard(r, full));
   app.appendChild(promptCard(r, full));
@@ -550,6 +562,7 @@ function promptCard(r: CastResult, f: DuanshiFull): HTMLElement {
   const build = () => buildExportPrompt(r, f, {
     question: state.question.trim() || null,
     background: state.background.trim() || null,
+    waiying: state.waiying,
     includeFewshot: state.includeFewshot,
   });
   let out = build();

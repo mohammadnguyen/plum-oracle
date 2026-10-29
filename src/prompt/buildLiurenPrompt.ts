@@ -15,6 +15,10 @@ import { LIUREN_CHAT_REQUIREMENTS } from "./liurenChatRequirements.js";
 import { CALENDAR_LIB } from "../engine/lineage.js";
 import { leixiangOf, TIANJIANG_SOURCE } from "../engine/liuren/tianjiangLeixiang.js";
 import { backgroundLines, FOLLOWUP_LIUREN } from "./conversation.js";
+import { citeOf, DAQUAN_QUOTES as DQ } from "../engine/liuren/daquan.js";
+import { LIUQIN_BASIS } from "../engine/liuren/liuqin.js";
+import { SEASON_NAME, statesLine } from "../engine/liuren/wangxiang.js";
+import { GAN_WUXING } from "../engine/liuren/ganzhi.js";
 
 const CONF_CN: Readonly<Record<string, string>> = Object.freeze({
   confirmed: "已与两家独立排盘实现逐传核过",
@@ -53,7 +57,37 @@ export function liurenFactLines(r: LiurenResult): string[] {
   for (const c of r.chuanDetail) {
     L.push(
       `  ${c.pos}传 ${c.dun ?? "（旬空无遁干）"}${c.zhi}（${c.wuxing}）` +
-      `　乘${c.jiang}${c.kong ? "　【空亡】" : ""}　与日干：${c.relToGan}`,
+      `　乘${c.jiang}${c.kong ? "　【空亡】" : ""}　与日干：${c.relToGan}（六亲：${c.liuqin}）　旺衰：${c.qi}`,
+    );
+  }
+
+  // 旺相休囚：按月建定季，表与依据均出自《六壬大全》，见 engine/liuren/wangxiang.ts
+  const wx = r.wangxiang;
+  L.push(
+    `【旺相休囚】月建 ${wx.yuejian}，${SEASON_NAME[wx.season]}：${statesLine(wx.states)}。` +
+    `日干 ${r.input.gan}（${GAN_WUXING[r.input.gan]}）：${r.ganQi}。`,
+  );
+  L.push(
+    `  依据：${citeOf(DQ.wang)}「${DQ.wang.text}」「${DQ.xiang.text}」，${citeOf(DQ.si)}「${DQ.si.text}」` +
+    `「${DQ.qiu.text}」「${DQ.xiu.text}」；季月何者为死原文未列，按${citeOf(DQ.siRule)}「${DQ.siRule.text}」补（土克水，水死）。`,
+  );
+  L.push(
+    `  旺、相即「${DQ.youqi.text}」，休、囚即「${DQ.wuqi.text}」（${citeOf(DQ.youqi)}）；` +
+    "死，原书此句未举，本软件归在无气一边。",
+  );
+
+  // 六亲：三传里出现的几类，按出现顺序去重
+  const seenQ = new Set<string>();
+  const lqs = r.chuanDetail.map((c) => c.liuqin).filter((x) => (seenQ.has(x) ? false : (seenQ.add(x), true)));
+  L.push(
+    `【六亲·有出处】以日干为我定名，录自《六壬大全》（原书无标点，照录）。卷八只举甲乙日为例，` +
+    `其余日干「${DQ.fangCi.text}」（${citeOf(DQ.fangCi)}）。`,
+  );
+  for (const x of lqs) {
+    const b = LIUQIN_BASIS[x];
+    L.push(
+      `  · ${x}（${b.defNote}）：定名依据「${b.def.text}」（${citeOf(b.def)}）；` +
+      (b.zhi ? `所指「${b.zhi.text}」（${citeOf(b.zhi)}，原书以甲乙日见此类神为例）。` : "原书此处未写所指。"),
     );
   }
 

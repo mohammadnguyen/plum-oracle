@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify:tianjiang": "vite-node scripts/verify-tianjiang.ts"
+    "verify:tianjiang": "vite-node scripts/verify-tianjiang.ts",
+    "verify:liuren": "vite-node scripts/verify-liuren.ts",
+    "verify:waiying": "vite-node scripts/verify-waiying.ts"
   },
   "dependencies": {
     "lunar-javascript": "1.7.3"

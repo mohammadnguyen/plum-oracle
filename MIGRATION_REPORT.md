@@ -229,6 +229,15 @@ python web/tests/fixtures/gen_prompt_parity.py
 - 六壬导出附【天将类象·有出处】（只列三传所乘天将）；两版六壬要求改为只许逐字截取表中原句。
 - 两版六壬要求明写「这是大六壬（不是小六壬，也不是六壬金口诀）」。
 
+### 九之七、同日追加：六壬六亲、旺相休囚；梅花外应（宪法 §0.3 ⑪）
+
+- `src/engine/liuren/daquan.ts`（引文出处钉）、`wangxiang.ts`（旺相休囚，从卷五原文解析）、`liuqin.ts`（六亲）；
+  `result.ts` 的三传带 `liuqin`、`qi`，结果带 `wangxiang`、`ganQi`；季月前段并列卷八「十八日」一说。
+- `src/engine/waiying.ts` + `src/ui/waiyingCard.ts`：外应 36 条（原书论卦象条目），外应为用、按体用生克表定吉凶，
+  导出单列【外应】节（不在 facts 内），内外组合只摆 L1007 原句，不改最终极性。
+- 核对脚本：`npm run verify:liuren`（18 条，联网取钉死提交）、`npm run verify:waiying`（42 条，读本地 TXT）。
+- 新增 `tests/liuren-wangxiang.test.ts`（8 条）、`tests/waiying.test.ts`（7 条）。全仓 167 条全绿。
+
 ### 九之六、同日追加：起卦体验（宪法 §0.3 ⑩）
 
 - `src/ui/ritual.ts`：静心页（按住 1.5 秒起卦，按满那一刻为起卦时刻）与成卦动画（梅花逐爻成卦、

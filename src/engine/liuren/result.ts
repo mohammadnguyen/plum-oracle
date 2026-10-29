@@ -6,6 +6,9 @@
  * 一步都不省——「每一句解读挂靠盘面依据」要成立，盘面就得先把依据摆全。
  */
 import { Solar } from "lunar-javascript";
+import { liuqinOf, type Liuqin } from "./liuqin.js";
+import { qiOfZhi, statesLine, wangxiangAt, type QiState, type WangxiangInfo } from "./wangxiang.js";
+import { DAQUAN_QUOTES } from "./daquan.js";
 import {
   DIZHI, JIGONG, ZHI_WUXING, GAN_WUXING, chong, xunKong, zhiIndex,
   type Gan, type Wuxing, type Zhi,
@@ -58,7 +61,15 @@ export interface LiurenResult {
     kong: boolean;
     /** 与日干的关系：生干/克干/干生/干克/比和 */
     relToGan: string;
+    /** 六亲名（由 relToGan 换名，见 liuqin.ts） */
+    liuqin: Liuqin;
+    /** 本季旺相休囚死（按月建，见 wangxiang.ts） */
+    qi: QiState;
   }>;
+  /** 本课的旺相休囚：月建、季节、五行各状态；季月前段另有一说 */
+  wangxiang: WangxiangInfo;
+  /** 日干在本季的状态 */
+  ganQi: QiState;
   /** 本盘踩中的门派分歧，逐条并列，不替用户裁决 */
   disputes: string[];
   /** 本盘所用规则的把握程度（取最低一档） */
@@ -109,6 +120,7 @@ export function divineLiuren(input: LiurenInput): LiurenResult {
   const { xunshou, kongwang } = xunKong(dayGanZhi);
 
   const isKong = (z: string) => (kongwang as readonly string[]).includes(z);
+  const wx = wangxiangAt(at);
 
   const rows = byDiPlate(plate, tj).map((r) => ({
     di: r.di, tian: r.tian, jiang: r.jiang as string, kong: isKong(r.tian),
@@ -118,12 +130,21 @@ export function divineLiuren(input: LiurenInput): LiurenResult {
     pos: c.pos, zhi: c.zhi, wuxing: ZHI_WUXING[c.zhi]!, dun: c.dun,
     jiang: tj.byTian[c.zhi] as string, kong: isKong(c.zhi),
     relToGan: relToGan(gan, c.zhi),
+    liuqin: liuqinOf(relToGan(gan, c.zhi)),
+    qi: qiOfZhi(wx, c.zhi),
   }));
 
   const disputes: string[] = [];
   if (sanchuan.disputeNote) disputes.push(sanchuan.disputeNote);
   disputes.push(...sanchuan.altNotes);
   if (tj.disputeNote) disputes.push(tj.disputeNote);
+  if (wx.alt) {
+    disputes.push(
+      `季月土旺：本软件依《六壬大全》卷五「四季土旺」「季月金相」，季月整月以土为旺；同书卷八另云` +
+      `「${DAQUAN_QUOTES.tuShiba.text}」，即只在四立前十八日土旺。本课距${wx.alt.li}尚有 ${wx.alt.days} 日，` +
+      `按此说仍属${wx.alt.season}季：${statesLine(wx.alt.states)}——三传与日干的旺相休囚随之不同，天地盘、三传本身不变。`,
+    );
+  }
   disputes.push(
     `昼夜之分：本软件以「${ZHOU_YE_RULE}」为界（本盘为${zhou ? "昼" : "夜"}占）；` +
     "另一说以实际日出日入为界，随节令与纬度浮动。此项决定取昼贵还是夜贵：按另一说若本盘昼夜归属不同，" +
@@ -145,7 +166,8 @@ export function divineLiuren(input: LiurenInput): LiurenResult {
     },
     yuejiang: { ...yj, jiangName: JIANG_NAME[yj.zhi]! },
     plate, rows, sike, sanchuan, tianjiang: tj,
-    kongwang, xunshou, chuanDetail, disputes, confidence,
+    kongwang, xunshou, chuanDetail, wangxiang: wx, ganQi: wx.states[GAN_WUXING[gan]!]!,
+    disputes, confidence,
     question: (input.question ?? "").trim() || null,
   };
 }

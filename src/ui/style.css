@@ -304,3 +304,9 @@ button.hold.done .bar { stroke: var(--ji); }
 .compass .read small { display: block; color: var(--ink2); font-size: 12px; }
 .picked { font-size: 14px; margin-top: 6px; }
 .picked b { color: var(--accent); }
+
+/* ── 外应 ───────────────────────────────────────────────────── */
+.wy-cat { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0; }
+.wy-cat .wy-name { flex: 0 0 34px; font-size: 13px; color: var(--ink2); padding-top: 8px; }
+.wy-cat .matches { margin: 0; flex: 1 1 auto; }
+.wy-cat .matches button { padding: 4px 9px; font-size: 13.5px; }
